@@ -2,8 +2,10 @@ import styles from "./Polls.module.css";
 
 export default function PollsView() {
   return (
-    <main>
-      <h1 className={styles.h1}>Polls App</h1>
+    <main className={styles.main}>
+      <div className={styles.app}>
+        <h1>Polls</h1>
+      </div>
     </main>
   );
 }
