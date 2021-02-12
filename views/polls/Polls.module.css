@@ -5,8 +5,9 @@
 }
 
 .app {
-  @apply bg-gray-100 w-full h-full;
+  @apply w-full h-full bg-gray-100 rounded-xl border flex flex-col overflow-scroll border-gray-300;
+
+  -webkit-overflow-scrolling: touch;
 
   max-width: 500px;
-  max-height: 300px;
 }
