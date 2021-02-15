@@ -1,5 +1,6 @@
 import { useState } from "react";
 import styles from "./Polls.module.css";
+import { Plus, ChevronDown } from "react-feather";
 
 function PollChoice({ id, index }: { id: string; index: number }) {
   const label = `Choice ${index + 1}`;
@@ -7,7 +8,12 @@ function PollChoice({ id, index }: { id: string; index: number }) {
   return (
     <div>
       <label className="flex" htmlFor={id}>
-        {label}
+        <span>
+          {label}{" "}
+          {index + 1 > 2 ? (
+            <span className="text-gray-400">(optional)</span>
+          ) : null}
+        </span>
       </label>
       <input
         className="w-full border border-gray-300 rounded-md bg-gray-50 px-4 py-2"
@@ -38,9 +44,12 @@ export default function PollsView() {
             <div className="w-12 flex items-end justify-end">
               {canAddMoreChoices && (
                 <button
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-300"
+                  type="button"
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-soapbox bg-soapbox bg-opacity-20 focus:outline-none focus:ring-4"
                   onClick={addChoice}
-                ></button>
+                >
+                  <Plus />
+                </button>
               )}
             </div>
           </div>
@@ -54,23 +63,26 @@ export default function PollsView() {
               </label>
             </div>
 
-            <select
-              className="border border-gray-300 rounded-md bg-gray-50 px-4 py-2 appearance-none"
-              name="length"
-              id="length"
-            >
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-            </select>
+            <div className="div relative">
+              <select
+                className="w-full border border-gray-300 rounded-md bg-gray-50 pl-4 pr-12 py-2 appearance-none"
+                name="length"
+                id="length"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+              </select>
+              <div className="pointer-events-none absolute right-2 transform-gpu top-1/2 -translate-y-1/2">
+                <ChevronDown />
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="border-t border-gray-300">
-          <button className="w-full p-4 text-center font-medium text-purple-500 hover:bg-purple-50">
+          <button className="w-full p-4 text-center font-medium text-soapbox">
             Start Poll
           </button>
         </div>

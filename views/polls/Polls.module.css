@@ -5,9 +5,7 @@
 }
 
 .app {
-  @apply w-full h-full bg-gray-100 rounded-xl border flex flex-col overflow-scroll border-gray-300;
+  @apply w-full h-full bg-gray-100 flex flex-col overflow-scroll;
 
   -webkit-overflow-scrolling: touch;
-
-  max-width: 500px;
 }
