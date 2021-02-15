@@ -1,11 +1,25 @@
 .main {
-  @apply min-h-screen grid;
-
-  place-items: center;
+  @apply min-h-screen flex flex-col;
 }
 
 .app {
-  @apply w-full h-full bg-gray-100 flex flex-col overflow-scroll;
+  @apply flex-1 bg-gray-100 flex flex-col overflow-scroll;
 
   -webkit-overflow-scrolling: touch;
+}
+
+.addMore {
+  @apply w-8 h-8 flex items-center justify-center rounded-full text-soapbox bg-soapbox bg-opacity-20 focus:outline-none focus:ring-4;
+}
+
+.input {
+  @apply w-full border border-gray-300 rounded-md bg-gray-50 px-4 py-2 appearance-none;
+  appearance: none;
+  -webkit-appearnce: none;
+}
+
+.select {
+  @apply w-full border border-gray-300 rounded-md bg-gray-50 pl-4 pr-12 py-2 appearance-none;
+  appearance: none;
+  -webkit-appearnce: none;
 }

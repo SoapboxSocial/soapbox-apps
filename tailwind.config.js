@@ -4,7 +4,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        soapbox: "#8359FE",
+        soapbox: "#8359fe",
       },
     },
   },
