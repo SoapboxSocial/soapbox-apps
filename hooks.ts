@@ -6,5 +6,7 @@ export function useUser() {
   return {
     userID: query?.userID || null,
     userRole: query?.userRole || null,
+    isFirst: Boolean(query?.isFirst || null),
+    roomId: query?.roomId || null,
   };
 }

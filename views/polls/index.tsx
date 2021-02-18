@@ -2,12 +2,12 @@ import { useMap } from "@roomservice/react";
 import { useState } from "react";
 import { ChevronDown, Plus } from "react-feather";
 import { useForm } from "react-hook-form";
-import Users from "../../components/polls/users";
 import { useUser } from "../../hooks";
-import styles from "./Polls.module.css";
 
 function CreatePollForm() {
-  const [, map] = useMap("soapbox-apps-poll-1", "poll");
+  const { roomId } = useUser();
+
+  const [room, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
 
   const [choices, choicesSet] = useState(2);
 
@@ -54,7 +54,7 @@ function CreatePollForm() {
               return (
                 <div key={id}>
                   <label className="flex mb-2" htmlFor={id}>
-                    <span>
+                    <span className="text-body">
                       {`Choice ${index} `}
                       {isOptional && (
                         <span className="text-gray-400">(optional)</span>
@@ -62,7 +62,7 @@ function CreatePollForm() {
                     </span>
                   </label>
                   <input
-                    className={styles.input}
+                    className="py-4 px-5 w-full rounded bg-white dark:bg-systemGrey6-dark"
                     id={id}
                     name={id}
                     type="text"
@@ -79,7 +79,7 @@ function CreatePollForm() {
             {canAddMoreChoices && (
               <button
                 type="button"
-                className="w-8 h-8 flex items-center justify-center rounded-full text-soapbox bg-soapbox bg-opacity-20 focus:outline-none focus:ring-4"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
                 onClick={addChoice}
               >
                 <Plus />
@@ -89,21 +89,16 @@ function CreatePollForm() {
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-300 dark:border-gray-600">
+      <div className="p-4">
         <div className="flex">
           <div className="flex-1">
-            <label htmlFor="length">
+            <label className="text-body" htmlFor="length">
               Poll length <span className="text-gray-400">(minutes)</span>
             </label>
           </div>
 
           <div className="div relative">
-            <select
-              className={styles.select}
-              name="length"
-              id="length"
-              ref={register}
-            >
+            <select name="length" id="length" ref={register}>
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="15">15</option>
@@ -116,10 +111,10 @@ function CreatePollForm() {
         </div>
       </div>
 
-      <div className="border-t border-gray-300 dark:border-gray-600">
+      <div className="p-4">
         <button
           type="submit"
-          className="w-full p-4 text-center font-medium text-soapbox"
+          className="w-full py-3 bg-soapbox rounded text-white text-center text-title2 font-bold"
         >
           Start Poll
         </button>
@@ -129,9 +124,9 @@ function CreatePollForm() {
 }
 
 export default function PollsView() {
-  const [room, map] = useMap("soapbox-apps-poll-1", "poll");
+  const { isFirst, roomId } = useUser();
 
-  const { userRole } = useUser();
+  const [room, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
 
   const deletePoll = () => map.delete("poll");
 
@@ -166,7 +161,7 @@ export default function PollsView() {
         <div className="p-4 flex justify-between items-center">
           <div className="text-xl font-bold">Polls</div>
 
-          <Users />
+          {/* <Users /> */}
         </div>
 
         <ul className="flex-1 px-4 space-y-4">
@@ -183,7 +178,7 @@ export default function PollsView() {
               return (
                 <li key={i}>
                   <button
-                    className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-md flex justify-between"
+                    className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded flex justify-between"
                     onClick={voteOnPoll(item.label)}
                   >
                     <p className="leading-none">{item?.value}</p>
@@ -206,15 +201,18 @@ export default function PollsView() {
             <span>{room.poll.length} minutes left</span>
           </div>
 
-          {userRole === "admin" && (
-            <button className="text-red-500 font-medium" onClick={deletePoll}>
+          {isFirst && (
+            <button
+              className="text-systemRed-light dark:text-systemRed-dark font-medium"
+              onClick={deletePoll}
+            >
               Delete Poll
             </button>
           )}
         </div>
       </>
     );
-  else if (userRole === "admin") return <CreatePollForm />;
+  else if (isFirst) return <CreatePollForm />;
 
   return (
     <div className="flex-1 flex justify-center items-center">

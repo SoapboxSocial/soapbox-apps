@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  @apply bg-systemGrey6-light dark:bg-black text-black dark:text-white;
+}
+
+@layer utilities {
+  .text-title1 {
+    font-size: 28px;
+    line-height: 33px;
+    letter-spacing: 0.36px;
+  }
+
+  .text-title2 {
+    font-size: 24px;
+    line-height: 28px;
+    letter-spacing: 0.35px;
+  }
+
+  .text-title3 {
+    font-size: 20px;
+    line-height: 24px;
+    letter-spacing: 0.38px;
+  }
+
+  .text-body {
+    font-size: 17px;
+    line-height: 22px;
+  }
+}

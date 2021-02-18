@@ -18,8 +18,8 @@ export default function Users() {
           key={i}
           className={`flex items-center justify-center h-8 w-8 rounded-full ring-4 ring-gray-100 dark:ring-gray-800 ${
             joined[joinedUserId] === "admin"
-              ? "bg-purple-500 text-white"
-              : "bg-gray-300"
+              ? "bg-soapbox text-white"
+              : "bg-systemGrey6-light"
           }`}
         >
           {joinedUserId}
