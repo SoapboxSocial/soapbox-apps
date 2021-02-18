@@ -1,7 +1,9 @@
 import { useMap } from "@roomservice/react";
 import { useState } from "react";
-import { ChevronDown, Plus } from "react-feather";
+import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
+import Button, { CircleIconButton } from "../../components/inputs/button";
+import Select from "../../components/inputs/select";
 import { useUser } from "../../hooks";
 
 function CreatePollForm() {
@@ -56,9 +58,7 @@ function CreatePollForm() {
                   <label className="flex mb-2" htmlFor={id}>
                     <span className="text-body">
                       {`Choice ${index} `}
-                      {isOptional && (
-                        <span className="text-gray-400">(optional)</span>
-                      )}
+                      {isOptional && <span>(optional)</span>}
                     </span>
                   </label>
                   <input
@@ -77,13 +77,11 @@ function CreatePollForm() {
 
           <div className="w-12 flex items-end justify-end">
             {canAddMoreChoices && (
-              <button
+              <CircleIconButton
                 type="button"
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
+                icon={<Plus />}
                 onClick={addChoice}
-              >
-                <Plus />
-              </button>
+              />
             )}
           </div>
         </div>
@@ -93,31 +91,21 @@ function CreatePollForm() {
         <div className="flex">
           <div className="flex-1">
             <label className="text-body" htmlFor="length">
-              Poll length <span className="text-gray-400">(minutes)</span>
+              Poll length <span>(minutes)</span>
             </label>
           </div>
 
-          <div className="div relative">
-            <select name="length" id="length" ref={register}>
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-            </select>
-            <div className="pointer-events-none absolute right-2 transform-gpu top-1/2 -translate-y-1/2">
-              <ChevronDown />
-            </div>
-          </div>
+          <Select
+            ref={register}
+            name="length"
+            id="length"
+            options={["5", "10", "15", "20"]}
+          />
         </div>
       </div>
 
       <div className="p-4">
-        <button
-          type="submit"
-          className="w-full py-3 bg-soapbox rounded text-white text-center text-title2 font-bold"
-        >
-          Start Poll
-        </button>
+        <Button type="submit">Start Poll</Button>
       </div>
     </form>
   );
