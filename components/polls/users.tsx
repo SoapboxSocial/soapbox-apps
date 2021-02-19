@@ -3,9 +3,12 @@ import { useEffect } from "react";
 import { useUser } from "../../hooks";
 
 export default function Users() {
-  const { userRole } = useUser();
+  const { userRole, roomId } = useUser();
 
-  const [joined, joinedClient] = usePresence("soapbox-apps-poll-1", "poll");
+  const [joined, joinedClient] = usePresence(
+    `soapbox-mini-polls-${roomId}`,
+    "joined"
+  );
 
   useEffect(() => {
     joinedClient.set(userRole);
