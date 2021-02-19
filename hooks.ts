@@ -1,6 +1,6 @@
+import { getUser, User } from "@soapboxsocial/minis.js";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { getUser, User } from "./lib/soapbox-minis-sdk";
 
 export function useUser() {
   const { query } = useRouter();
@@ -18,7 +18,9 @@ export function useSession() {
 
   useEffect(() => {
     async function getSession() {
-      userSet(await getUser());
+      const _user = await getUser();
+
+      userSet(_user);
     }
 
     getSession();
