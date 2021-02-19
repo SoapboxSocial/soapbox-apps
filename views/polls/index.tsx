@@ -1,4 +1,5 @@
 import { useMap } from "@roomservice/react";
+import { useRouter } from "next/router";
 import { useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
@@ -7,7 +8,7 @@ import Select from "../../components/inputs/select";
 import { useUser } from "../../hooks";
 
 function CreatePollForm() {
-  const { roomId } = useUser();
+  const roomId = useRoomId();
 
   const [, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
 
@@ -111,8 +112,16 @@ function CreatePollForm() {
   );
 }
 
+function useRoomId() {
+  const { query } = useRouter();
+
+  return query?.roomID || null;
+}
+
 export default function PollsView() {
-  const { isFirst, roomId } = useUser();
+  const roomId = useRoomId();
+
+  const { isFirst } = useUser();
 
   const [room, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
 

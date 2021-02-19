@@ -1,6 +1,6 @@
-import mitt from "mitt";
 import { useRouter } from "next/router";
-import { useCallback, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getUser, User } from "./lib/soapbox-minis-sdk";
 
 export function useUser() {
   const { query } = useRouter();
@@ -14,49 +14,15 @@ export function useUser() {
 }
 
 export function useSession() {
-  return {
-    userID: 0,
-    roomId: 0,
-    isAdmin: false,
-  };
-}
-
-type SoapboxEvent = {
-  name: "APP_OPEN" | "USER_JOIN";
-  userID: number;
-  roomID: number;
-  isAdmin?: boolean;
-};
-
-export function useWebViewEvents() {
-  const emitter = mitt();
-
-  const eventHandler = useCallback((event: MessageEvent<SoapboxEvent>) => {
-    console.log("[EventHandler]", event);
-
-    switch (event.data?.name) {
-      case "APP_OPEN":
-        console.log("APP_OPEN");
-
-        break;
-
-      case "USER_JOIN":
-        console.log("USER_JOIN");
-
-        break;
-
-      default:
-        break;
-    }
-  }, []);
+  const [user, userSet] = useState<User>(null);
 
   useEffect(() => {
-    (window as any).mitt = emitter;
+    async function getSession() {
+      userSet(await getUser());
+    }
 
-    emitter.on("foo", eventHandler);
-
-    return () => {
-      emitter.off("foo", eventHandler);
-    };
+    getSession();
   }, []);
+
+  return user;
 }
