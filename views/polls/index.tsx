@@ -9,7 +9,7 @@ import { useUser } from "../../hooks";
 function CreatePollForm() {
   const { roomId } = useUser();
 
-  const [room, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
+  const [, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
 
   const [choices, choicesSet] = useState(2);
 
