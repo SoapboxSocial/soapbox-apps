@@ -183,10 +183,10 @@
   dependencies:
     "@roomservice/browser" "^3.0.4"
 
-"@soapboxsocial/minis.js@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@soapboxsocial/minis.js/-/minis.js-1.0.0.tgz#9996d262ea3064845f3ce3be09aca1af104ec58c"
-  integrity sha512-3ReAMsJHNc8cqbk7H2/Xr3OuRQlBukAe/Ojxzjc9O4RbToeDjrhn29etc9xqmKTM13hE2SxvcU345has3Kzxgg==
+"@soapboxsocial/minis.js@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@soapboxsocial/minis.js/-/minis.js-2.0.0.tgz#78a2a0e39b4e51aacdd174fd530da89672b48584"
+  integrity sha512-xw0j9Lk8yleFSMd1S0stQWiWG7KZlpC3FZNir7NCiO/G7X8SKyQLtRh8PurTkMB2iP+/DhhfIPEo6lKzdyhB2g==
   dependencies:
     mitt "^2.1.0"
 
