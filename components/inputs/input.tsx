@@ -6,7 +6,7 @@ const Input = forwardRef<
 >(function InputElement(props, ref) {
   return (
     <input
-      className="py-4 px-5 w-full rounded bg-white dark:bg-systemGrey6-dark"
+      className="py-4 px-5 w-full rounded bg-white dark:bg-systemGrey6-dark focus:outline-none focus:ring-4"
       ref={ref}
       {...props}
     />

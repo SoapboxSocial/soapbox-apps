@@ -1,15 +1,17 @@
-import { useMap } from "@roomservice/react";
+import { useList, useMap, usePresence } from "@roomservice/react";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
 import Button, { CircleIconButton } from "../../components/inputs/button";
 import Input from "../../components/inputs/input";
 
 function CreatePollForm() {
-  const roomId = useRoomId();
+  const soapboxRoomId = useSoapboxRoomId();
 
-  const [, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
+  const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
+
+  const [, list] = useList(roomServiceRoomName, "poll");
 
   const [choices, choicesSet] = useState(2);
 
@@ -30,7 +32,7 @@ function CreatePollForm() {
         }))
         .filter((option) => !!option.value);
 
-      map.set("poll", items);
+      list.push(items);
     } catch (error) {}
   };
 
@@ -86,18 +88,28 @@ function CreatePollForm() {
   );
 }
 
-function useRoomId() {
+function useSoapboxRoomId() {
   const { query } = useRouter();
 
   return query?.roomID || null;
 }
 
 export default function PollsView() {
-  const roomId = useRoomId();
+  const soapboxRoomId = useSoapboxRoomId();
 
-  const [room, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
+  const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
 
-  const deletePoll = () => map.delete("poll");
+  const [poll, list] = useList(roomServiceRoomName, "poll");
+
+  const deletePoll = () => {};
+
+  const [joined, joinedClient] = usePresence(roomServiceRoomName, "joined");
+
+  useEffect(() => {
+    joinedClient.set(true);
+  }, []);
+
+  console.log(joined);
 
   const voteOnPoll = (label: string) => () => {
     const updatedItems = room.poll.map((item) => {
@@ -119,12 +131,13 @@ export default function PollsView() {
     });
   };
 
-  const votesCount = room?.poll?.reduce(
-    (acc: number, curr) => acc + curr.votes,
-    0
-  );
+  console.log({ poll });
 
-  if (room?.poll)
+  const votesCount = poll?.reduce((acc: number, curr) => acc + curr.votes, 0);
+
+  if (poll.length === 0) return <CreatePollForm />;
+
+  if (poll.length > 0)
     return (
       <>
         <div className="p-4 flex justify-between items-center">
@@ -134,8 +147,10 @@ export default function PollsView() {
         </div>
 
         <ul className="flex-1 px-4 space-y-4">
-          {room.poll.map(
+          {poll.map(
             (item: { label: string; value: string; votes: number }, i) => {
+              console.log(item);
+
               const votePercent = votesCount > 0 ? item.votes / votesCount : 0;
 
               const formattedVotePercent = votePercent.toLocaleString("en-US", {
@@ -175,7 +190,6 @@ export default function PollsView() {
         </div>
       </>
     );
-  else return <CreatePollForm />;
 
   return (
     <div className="flex-1 flex justify-center items-center">

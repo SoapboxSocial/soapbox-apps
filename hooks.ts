@@ -27,7 +27,9 @@ export function useSession() {
       }
     }
 
-    getSession();
+    if (typeof window !== "undefined") {
+      getSession();
+    }
   }, []);
 
   return user;

@@ -10,17 +10,21 @@ export default function Polls() {
 
   return (
     <RoomServiceProvider
-      online={user?.id !== null}
+      online={user !== null}
       clientParameters={{
         auth: AuthFunction,
         ctx: {
-          userID: user?.id,
+          userID: String(user?.id),
         },
       }}
     >
-      <main className="flex flex-col min-h-screen">
-        <PollsView />
-      </main>
+      {user?.id ? (
+        <main className="flex flex-col min-h-screen">
+          <PollsView />
+        </main>
+      ) : (
+        <main className="flex flex-col min-h-screen">Loading</main>
+      )}
     </RoomServiceProvider>
   );
 }

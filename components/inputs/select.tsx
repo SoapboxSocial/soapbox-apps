@@ -12,7 +12,7 @@ const Select = forwardRef<HTMLSelectElement, Props>(function SelectElement(
   return (
     <div className="div relative">
       <select
-        className="py-4 pl-5 pr-10 w-full rounded bg-white dark:bg-systemGrey6-dark appearance-none"
+        className="py-4 pl-5 pr-10 w-full rounded bg-white dark:bg-systemGrey6-dark appearance-none focus:outline-none focus:ring-4"
         ref={ref}
         {...rest}
       >

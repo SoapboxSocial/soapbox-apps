@@ -26,6 +26,12 @@ export async function AuthFunction(params: {
 
   const body = await response.json();
 
+  console.log({
+    user: body.user,
+    resources: body.resources,
+    token: body.token,
+  });
+
   return {
     user: body.user,
     resources: body.resources,
