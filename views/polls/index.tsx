@@ -1,94 +1,8 @@
 import { useList, useMap, usePresence } from "@roomservice/react";
-import { onRoomClosed } from "@soapboxsocial/minis.js";
-import { useState } from "react";
-import { Plus } from "react-feather";
-import { useForm } from "react-hook-form";
-import Button, { CircleIconButton } from "../../components/inputs/button";
-import Input from "../../components/inputs/input";
+import { onClose } from "@soapboxsocial/minis.js";
+import { useMemo, useState } from "react";
 import { useSoapboxRoomId } from "../../hooks";
-
-function CreatePollForm() {
-  const soapboxRoomId = useSoapboxRoomId();
-
-  const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
-
-  const [, map] = useMap(roomServiceRoomName, "mypoll");
-
-  const [choices, choicesSet] = useState(2);
-
-  const addChoice = () => choicesSet((num) => num + 1);
-  const canAddMoreChoices = choices < 4;
-
-  const { register, handleSubmit } = useForm();
-
-  const onSubmit = async (data: { [key: string]: string }) => {
-    try {
-      const options = Object.values(data).map((val, i) => ({
-        label: Object.keys(data)[i],
-        value: val,
-      }));
-
-      map.set("options", options);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex-1 p-4 flex flex-col"
-    >
-      <div className="flex-1">
-        <div className="flex">
-          <div className="flex-1 space-y-4">
-            {new Array(choices).fill("").map((_, i) => {
-              const index = i + 1;
-              const id = `choice-${index}`;
-
-              const isOptional = index > 2;
-
-              return (
-                <div key={id}>
-                  <label className="flex mb-2" htmlFor={id}>
-                    <span className="text-body">
-                      {`Choice ${index} `}
-                      {isOptional && (
-                        <span className="secondary">(optional)</span>
-                      )}
-                    </span>
-                  </label>
-                  <Input
-                    id={id}
-                    name={id}
-                    autoComplete="off"
-                    ref={register({
-                      required: !isOptional,
-                    })}
-                  />
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="w-12 flex items-end justify-end">
-            {canAddMoreChoices && (
-              <CircleIconButton
-                type="button"
-                icon={<Plus />}
-                onClick={addChoice}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <Button type="submit">Start Poll</Button>
-      </div>
-    </form>
-  );
-}
+import CreatePollForm from "./createPollForm";
 
 type PollOption = {
   label: string;
@@ -126,27 +40,33 @@ export default function PollsView() {
   };
 
   /**
-   * Used to cleanup the Room Service rooms for creating new polls, implement on room closed
+   * Used to cleanup the Room Service rooms
    */
   const deletePoll = () => {
-    map.delete("options");
-
     for (let i = 0; i < votes.length; i++) {
       list.delete(i);
     }
+
+    map.delete("options");
   };
 
-  onRoomClosed(deletePoll);
+  onClose(deletePoll);
 
   const votesCount = votes.length;
+
+  const formattedVotesCount = useMemo(
+    () =>
+      votesCount > 1 || votesCount === 0
+        ? `${votesCount} votes`
+        : `${votesCount} vote`,
+    [votesCount]
+  );
 
   if (poll.options)
     return (
       <main className="flex flex-col min-h-screen">
         <div className="p-4 flex justify-between items-center">
           <div className="text-title2 font-bold">Polls</div>
-
-          {/* <Users /> */}
         </div>
 
         <ul className="flex-1 px-4 space-y-4">
@@ -179,11 +99,7 @@ export default function PollsView() {
         </ul>
 
         <div className="p-4 flex justify-between items-center">
-          <div className="secondary">
-            {votesCount > 1 || votesCount === 0
-              ? `${votesCount} votes`
-              : `${votesCount} vote`}
-          </div>
+          <div className="secondary">{formattedVotesCount}</div>
 
           <button
             className="text-systemRed-light dark:text-systemRed-dark font-medium"
@@ -195,15 +111,5 @@ export default function PollsView() {
       </main>
     );
 
-  return (
-    <main className="flex flex-col min-h-screen">
-      <div className="px-4 pt-4 flex justify-between items-center">
-        <div className="text-title2 font-bold">Polls</div>
-
-        {/* <Users /> */}
-      </div>
-
-      <CreatePollForm />
-    </main>
-  );
+  return <CreatePollForm />;
 }
