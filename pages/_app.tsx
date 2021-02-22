@@ -14,6 +14,22 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
             );
           },
         },
+        members: {
+          postMessage: (payload: { sequence: number }) => {
+            console.log(
+              "Handling message handler 'members' with sequence",
+              payload.sequence
+            );
+          },
+        },
+        room: {
+          postMessage: (payload: { sequence: number }) => {
+            console.log(
+              "Handling message handler 'room' with sequence",
+              payload.sequence
+            );
+          },
+        },
       },
     };
   }
