@@ -1,4 +1,4 @@
-import { useMap } from "@roomservice/react";
+import { useList, useMap } from "@roomservice/react";
 import { useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
@@ -95,7 +95,15 @@ export default function PollsView() {
 
   const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
 
-  const [poll, map] = useMap(roomServiceRoomName, "mypoll");
+  const [poll, map] = useMap<{ options?: PollOption[]; votes: any }>(
+    roomServiceRoomName,
+    "mypoll"
+  );
+
+  const [votes, list] = useList<PollOption[]>(
+    roomServiceRoomName,
+    "mypoll-votes"
+  );
 
   // const [joined, joinedClient] = usePresence(roomServiceRoomName, "joined");
 
@@ -105,11 +113,11 @@ export default function PollsView() {
 
   // console.log(joined);
 
-  const voteOnPoll = (label: string) => () => {};
+  const voteOnPoll = (option: PollOption) => () => list.push(option);
 
   const deletePoll = () => map.delete("options");
 
-  const votesCount = 0;
+  const votesCount = votes.length;
 
   if (poll.options)
     return (
@@ -121,8 +129,12 @@ export default function PollsView() {
         </div>
 
         <ul className="flex-1 px-4 space-y-4">
-          {poll.options.map((item: PollOption, i) => {
-            const votePercent = votesCount > 0 ? 0 / votesCount : 0;
+          {poll.options.map((option: PollOption, i) => {
+            const optionVotes = votes.filter(
+              (vote) => vote.label === option.label
+            ).length;
+
+            const votePercent = votesCount > 0 ? optionVotes / votesCount : 0;
 
             const formattedVotePercent = votePercent.toLocaleString("en-US", {
               style: "percent",
@@ -134,9 +146,9 @@ export default function PollsView() {
               <li key={i}>
                 <button
                   className="w-full py-4 px-5 text-title3 bg-white dark:bg-systemGrey6-dark rounded flex justify-between focus:outline-none focus:ring-4"
-                  onClick={voteOnPoll(item.label)}
+                  onClick={voteOnPoll(option)}
                 >
-                  <p className="leading-none">{item?.value}</p>
+                  <p className="leading-none">{option.value}</p>
                   <p className="leading-none">{formattedVotePercent}</p>
                 </button>
               </li>
