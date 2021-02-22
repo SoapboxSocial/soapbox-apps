@@ -1,18 +1,18 @@
 import { RoomServiceProvider } from "@roomservice/react";
-import { useUser } from "../../hooks";
+import { useSession } from "../../hooks";
 import { AuthFunction } from "../../lib/roomservice";
 import PollsView from "../../views/polls";
 
 export default function Polls() {
-  const { userID } = useUser();
+  const user = useSession();
 
   return (
     <RoomServiceProvider
-      online={userID !== null}
+      online={user?.id !== null}
       clientParameters={{
         auth: AuthFunction,
         ctx: {
-          userID,
+          userID: user?.id,
         },
       }}
     >

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
 import Button, { CircleIconButton } from "../../components/inputs/button";
+import Input from "../../components/inputs/input";
 import Select from "../../components/inputs/select";
-import { useUser } from "../../hooks";
 
 function CreatePollForm() {
   const roomId = useRoomId();
@@ -25,6 +25,8 @@ function CreatePollForm() {
 
   const onSubmit = async (data: { [key: string]: string }) => {
     try {
+      console.log(data);
+
       const pollLengthInMinutes = data.length;
 
       const items = Object.values(data)
@@ -59,14 +61,14 @@ function CreatePollForm() {
                   <label className="flex mb-2" htmlFor={id}>
                     <span className="text-body">
                       {`Choice ${index} `}
-                      {isOptional && <span>(optional)</span>}
+                      {isOptional && (
+                        <span className="secondary">(optional)</span>
+                      )}
                     </span>
                   </label>
-                  <input
-                    className="py-4 px-5 w-full rounded bg-white dark:bg-systemGrey6-dark"
+                  <Input
                     id={id}
                     name={id}
-                    type="text"
                     ref={register({
                       required: !isOptional,
                     })}
@@ -92,7 +94,7 @@ function CreatePollForm() {
         <div className="flex">
           <div className="flex-1">
             <label className="text-body" htmlFor="length">
-              Poll length <span>(minutes)</span>
+              Poll length <span className="secondary">(minutes)</span>
             </label>
           </div>
 
@@ -120,8 +122,6 @@ function useRoomId() {
 
 export default function PollsView() {
   const roomId = useRoomId();
-
-  const { isFirst } = useUser();
 
   const [room, map] = useMap(`soapbox-mini-polls-${roomId}`, "poll");
 
@@ -198,18 +198,16 @@ export default function PollsView() {
             <span>{room.poll.length} minutes left</span>
           </div>
 
-          {isFirst && (
-            <button
-              className="text-systemRed-light dark:text-systemRed-dark font-medium"
-              onClick={deletePoll}
-            >
-              Delete Poll
-            </button>
-          )}
+          <button
+            className="text-systemRed-light dark:text-systemRed-dark font-medium"
+            onClick={deletePoll}
+          >
+            Delete Poll
+          </button>
         </div>
       </>
     );
-  else if (isFirst) return <CreatePollForm />;
+  else return <CreatePollForm />;
 
   return (
     <div className="flex-1 flex justify-center items-center">

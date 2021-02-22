@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-systemGrey6-light dark:bg-black text-black dark:text-white;
+@layer base {
+  body {
+    @apply bg-systemGrey6-light dark:bg-black text-black dark:text-white;
+  }
 }
 
 @layer utilities {
@@ -28,5 +30,17 @@ body {
   .text-body {
     font-size: 17px;
     line-height: 22px;
+  }
+
+  .primary {
+    @apply text-black dark:text-white;
+  }
+
+  .secondary {
+    @apply text-label-light dark:text-label-dark text-opacity-secondary;
+  }
+
+  .tertiary {
+    @apply text-label-light dark:text-label-dark text-opacity-tertiary;
   }
 }

@@ -18,9 +18,13 @@ export function useSession() {
 
   useEffect(() => {
     async function getSession() {
-      const _user = await getUser();
+      try {
+        const _user = await getUser();
 
-      userSet(_user);
+        userSet(_user);
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     getSession();

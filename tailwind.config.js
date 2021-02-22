@@ -17,6 +17,11 @@ module.exports = {
         systemGrey5: { light: "#e5e5ea", dark: "#2c2c2e" },
         systemGrey6: { light: "#f2f2f7", dark: "#1c1c1e" },
         systemRed: { light: "#ff3b30", dark: "#ff453a" },
+        label: { light: "#3c3c43", dark: "#ebebf5" },
+      },
+      textOpacity: {
+        secondary: "0.6",
+        tertiary: "0.3",
       },
     },
   },
