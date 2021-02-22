@@ -1,4 +1,4 @@
-import { useList, useMap } from "@roomservice/react";
+import { useMap } from "@roomservice/react";
 import { useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
@@ -113,7 +113,7 @@ export default function PollsView() {
 
   if (poll.options)
     return (
-      <>
+      <main className="flex flex-col min-h-screen">
         <div className="p-4 flex justify-between items-center">
           <div className="text-title2 font-bold">Polls</div>
 
@@ -158,8 +158,12 @@ export default function PollsView() {
             Delete Poll
           </button>
         </div>
-      </>
+      </main>
     );
 
-  return <CreatePollForm />;
+  return (
+    <main className="flex flex-col min-h-screen">
+      <CreatePollForm />
+    </main>
+  );
 }

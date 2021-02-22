@@ -1,15 +1,18 @@
 import { RoomServiceProvider } from "@roomservice/react";
-import Spinner from "../../components/spinner";
-import { useSession } from "../../hooks";
+import { useSession, useSoapboxRoomId } from "../../hooks";
 import { AuthFunction } from "../../lib/roomservice";
+import LoadingView from "../../views/loading";
 import PollsView from "../../views/polls";
 
 export default function Polls() {
+  const soapboxRoomId = useSoapboxRoomId();
   const user = useSession();
+
+  const isOnline = user !== null && soapboxRoomId !== null;
 
   return (
     <RoomServiceProvider
-      online={user !== null}
+      online={isOnline}
       clientParameters={{
         auth: AuthFunction,
         ctx: {
@@ -17,15 +20,7 @@ export default function Polls() {
         },
       }}
     >
-      {user?.id ? (
-        <main className="flex flex-col min-h-screen">
-          <PollsView />
-        </main>
-      ) : (
-        <main className="min-h-screen flex flex-col items-center justify-center">
-          <Spinner />
-        </main>
-      )}
+      {isOnline ? <PollsView /> : <LoadingView />}
     </RoomServiceProvider>
   );
 }
