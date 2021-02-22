@@ -1,4 +1,5 @@
-import { useList, useMap } from "@roomservice/react";
+import { useList, useMap, usePresence } from "@roomservice/react";
+import { onRoomClosed } from "@soapboxsocial/minis.js";
 import { useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
@@ -34,8 +35,11 @@ function CreatePollForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col">
-      <div className="flex-1 p-4">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex-1 p-4 flex flex-col"
+    >
+      <div className="flex-1">
         <div className="flex">
           <div className="flex-1 space-y-4">
             {new Array(choices).fill("").map((_, i) => {
@@ -57,6 +61,7 @@ function CreatePollForm() {
                   <Input
                     id={id}
                     name={id}
+                    autoComplete="off"
                     ref={register({
                       required: !isOptional,
                     })}
@@ -78,7 +83,7 @@ function CreatePollForm() {
         </div>
       </div>
 
-      <div className="p-4">
+      <div>
         <Button type="submit">Start Poll</Button>
       </div>
     </form>
@@ -105,17 +110,33 @@ export default function PollsView() {
     "mypoll-votes"
   );
 
-  // const [joined, joinedClient] = usePresence(roomServiceRoomName, "joined");
+  const [hasVoted, hasVotedSet] = useState(false);
 
-  // useEffect(() => {
-  //   joinedClient.set(true);
-  // }, []);
+  const [voted, votedClient] = usePresence<boolean>(
+    roomServiceRoomName,
+    "mypoll-voted"
+  );
 
-  // console.log(joined);
+  const voteOnPoll = (option: PollOption) => () => {
+    hasVotedSet(true);
 
-  const voteOnPoll = (option: PollOption) => () => list.push(option);
+    votedClient.set(true);
 
-  const deletePoll = () => map.delete("options");
+    list.push(option);
+  };
+
+  /**
+   * Used to cleanup the Room Service rooms for creating new polls, implement on room closed
+   */
+  const deletePoll = () => {
+    map.delete("options");
+
+    for (let i = 0; i < votes.length; i++) {
+      list.delete(i);
+    }
+  };
+
+  onRoomClosed(deletePoll);
 
   const votesCount = votes.length;
 
@@ -147,6 +168,7 @@ export default function PollsView() {
                 <button
                   className="w-full py-4 px-5 text-title3 bg-white dark:bg-systemGrey6-dark rounded flex justify-between focus:outline-none focus:ring-4"
                   onClick={voteOnPoll(option)}
+                  disabled={hasVoted}
                 >
                   <p className="leading-none">{option.value}</p>
                   <p className="leading-none">{formattedVotePercent}</p>
@@ -175,6 +197,12 @@ export default function PollsView() {
 
   return (
     <main className="flex flex-col min-h-screen">
+      <div className="px-4 pt-4 flex justify-between items-center">
+        <div className="text-title2 font-bold">Polls</div>
+
+        {/* <Users /> */}
+      </div>
+
       <CreatePollForm />
     </main>
   );
