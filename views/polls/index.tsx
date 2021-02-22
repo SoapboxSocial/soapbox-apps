@@ -66,7 +66,7 @@ export default function PollsView() {
     return (
       <main className="flex flex-col min-h-screen">
         <div className="p-4 flex justify-between items-center">
-          <div className="text-title2 font-bold">Polls</div>
+          <h1 className="text-title2 font-bold">Polls</h1>
         </div>
 
         <ul className="flex-1 px-4 space-y-4">

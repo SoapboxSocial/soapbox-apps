@@ -36,7 +36,7 @@ export default function CreatePollForm() {
   return (
     <main className="flex flex-col min-h-screen">
       <div className="px-4 pt-4 flex justify-between items-center">
-        <div className="text-title2 font-bold">Polls</div>
+        <h1 className="text-title2 font-bold">Polls</h1>
       </div>
 
       <form
