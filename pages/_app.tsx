@@ -13,22 +13,7 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
         messageHandlers: {
           user: {
             postMessage: (payload: { sequence: number }) => {
-              console.log("[MessageHandler - user]", payload);
-
-              setTimeout(() => {
-                const user = {
-                  display_name: "Jeff",
-                  id: 70,
-                  image: "fuck",
-                  username: "jeff",
-                };
-
-                // @ts-ignore
-                window.mitt.emit("user", {
-                  sequence: payload.sequence,
-                  data: user,
-                });
-              }, 1500);
+              console.log("[MessageHandler - user]", payload.sequence);
             },
           },
         },

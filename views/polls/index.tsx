@@ -5,7 +5,6 @@ import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
 import Button, { CircleIconButton } from "../../components/inputs/button";
 import Input from "../../components/inputs/input";
-import Select from "../../components/inputs/select";
 
 function CreatePollForm() {
   const roomId = useRoomId();
@@ -17,17 +16,11 @@ function CreatePollForm() {
   const addChoice = () => choicesSet((num) => num + 1);
   const canAddMoreChoices = choices < 4;
 
-  const { register, handleSubmit } = useForm({
-    defaultValues: {
-      length: "5",
-    },
-  });
+  const { register, handleSubmit } = useForm();
 
   const onSubmit = async (data: { [key: string]: string }) => {
     try {
       console.log(data);
-
-      const pollLengthInMinutes = data.length;
 
       const items = Object.values(data)
         .map((val, i) => ({
@@ -35,13 +28,9 @@ function CreatePollForm() {
           value: val,
           votes: 0,
         }))
-        .filter((option) => !!option.value)
-        .filter((option) => option.label !== "length");
+        .filter((option) => !!option.value);
 
-      map.set("poll", {
-        items,
-        length: pollLengthInMinutes,
-      });
+      map.set("poll", items);
     } catch (error) {}
   };
 
@@ -91,23 +80,6 @@ function CreatePollForm() {
       </div>
 
       <div className="p-4">
-        <div className="flex">
-          <div className="flex-1">
-            <label className="text-body" htmlFor="length">
-              Poll length <span className="secondary">(minutes)</span>
-            </label>
-          </div>
-
-          <Select
-            ref={register}
-            name="length"
-            id="length"
-            options={["5", "10", "15", "20"]}
-          />
-        </div>
-      </div>
-
-      <div className="p-4">
         <Button type="submit">Start Poll</Button>
       </div>
     </form>
@@ -128,7 +100,7 @@ export default function PollsView() {
   const deletePoll = () => map.delete("poll");
 
   const voteOnPoll = (label: string) => () => {
-    const updatedItems = room.poll.items.map((item) => {
+    const updatedItems = room.poll.map((item) => {
       if (item.label === label) {
         return {
           ...item,
@@ -147,7 +119,7 @@ export default function PollsView() {
     });
   };
 
-  const votesCount = room?.poll?.items?.reduce(
+  const votesCount = room?.poll?.reduce(
     (acc: number, curr) => acc + curr.votes,
     0
   );
@@ -162,7 +134,7 @@ export default function PollsView() {
         </div>
 
         <ul className="flex-1 px-4 space-y-4">
-          {room.poll.items.map(
+          {room.poll.map(
             (item: { label: string; value: string; votes: number }, i) => {
               const votePercent = votesCount > 0 ? item.votes / votesCount : 0;
 
@@ -188,14 +160,10 @@ export default function PollsView() {
         </ul>
 
         <div className="p-4 flex justify-between items-center">
-          <div className="text-gray-300">
-            <span>
-              {votesCount > 1 || votesCount === 0
-                ? `${votesCount} votes`
-                : `${votesCount} vote`}
-            </span>
-            <span className="px-1">·</span>
-            <span>{room.poll.length} minutes left</span>
+          <div className="secondary">
+            {votesCount > 1 || votesCount === 0
+              ? `${votesCount} votes`
+              : `${votesCount} vote`}
           </div>
 
           <button

@@ -6,6 +6,8 @@ import PollsView from "../../views/polls";
 export default function Polls() {
   const user = useSession();
 
+  console.log({ user });
+
   return (
     <RoomServiceProvider
       online={user?.id !== null}
