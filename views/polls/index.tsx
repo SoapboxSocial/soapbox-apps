@@ -1,17 +1,17 @@
-import { useList, useMap, usePresence } from "@roomservice/react";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useList, useMap } from "@roomservice/react";
+import { useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
 import Button, { CircleIconButton } from "../../components/inputs/button";
 import Input from "../../components/inputs/input";
+import { useSoapboxRoomId } from "../../hooks";
 
 function CreatePollForm() {
   const soapboxRoomId = useSoapboxRoomId();
 
   const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
 
-  const [, list] = useList(roomServiceRoomName, "poll");
+  const [, map] = useMap(roomServiceRoomName, "mypoll");
 
   const [choices, choicesSet] = useState(2);
 
@@ -22,18 +22,15 @@ function CreatePollForm() {
 
   const onSubmit = async (data: { [key: string]: string }) => {
     try {
-      console.log(data);
+      const options = Object.values(data).map((val, i) => ({
+        label: Object.keys(data)[i],
+        value: val,
+      }));
 
-      const items = Object.values(data)
-        .map((val, i) => ({
-          label: Object.keys(data)[i],
-          value: val,
-          votes: 0,
-        }))
-        .filter((option) => !!option.value);
-
-      list.push(items);
-    } catch (error) {}
+      map.set("options", options);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -88,90 +85,63 @@ function CreatePollForm() {
   );
 }
 
-function useSoapboxRoomId() {
-  const { query } = useRouter();
-
-  return query?.roomID || null;
-}
+type PollOption = {
+  label: string;
+  value: string;
+};
 
 export default function PollsView() {
   const soapboxRoomId = useSoapboxRoomId();
 
   const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
 
-  const [poll, list] = useList(roomServiceRoomName, "poll");
+  const [poll, map] = useMap(roomServiceRoomName, "mypoll");
 
-  const deletePoll = () => {};
+  // const [joined, joinedClient] = usePresence(roomServiceRoomName, "joined");
 
-  const [joined, joinedClient] = usePresence(roomServiceRoomName, "joined");
+  // useEffect(() => {
+  //   joinedClient.set(true);
+  // }, []);
 
-  useEffect(() => {
-    joinedClient.set(true);
-  }, []);
+  // console.log(joined);
 
-  console.log(joined);
+  const voteOnPoll = (label: string) => () => {};
 
-  const voteOnPoll = (label: string) => () => {
-    const updatedItems = room.poll.map((item) => {
-      if (item.label === label) {
-        return {
-          ...item,
-          votes: item.votes + 1,
-        };
-      } else {
-        return item;
-      }
-    });
+  const deletePoll = () => map.delete("options");
 
-    console.log(updatedItems);
+  const votesCount = 0;
 
-    map.set("poll", {
-      ...room.poll,
-      items: updatedItems,
-    });
-  };
-
-  console.log({ poll });
-
-  const votesCount = poll?.reduce((acc: number, curr) => acc + curr.votes, 0);
-
-  if (poll.length === 0) return <CreatePollForm />;
-
-  if (poll.length > 0)
+  if (poll.options)
     return (
       <>
         <div className="p-4 flex justify-between items-center">
-          <div className="text-xl font-bold">Polls</div>
+          <div className="text-title2 font-bold">Polls</div>
 
           {/* <Users /> */}
         </div>
 
         <ul className="flex-1 px-4 space-y-4">
-          {poll.map(
-            (item: { label: string; value: string; votes: number }, i) => {
-              console.log(item);
+          {poll.options.map((item: PollOption, i) => {
+            const votePercent = votesCount > 0 ? 0 / votesCount : 0;
 
-              const votePercent = votesCount > 0 ? item.votes / votesCount : 0;
+            const formattedVotePercent = votePercent.toLocaleString("en-US", {
+              style: "percent",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            });
 
-              const formattedVotePercent = votePercent.toLocaleString("en-US", {
-                style: "percent",
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              });
-
-              return (
-                <li key={i}>
-                  <button
-                    className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded flex justify-between"
-                    onClick={voteOnPoll(item.label)}
-                  >
-                    <p className="leading-none">{item?.value}</p>
-                    <p className="leading-none">{formattedVotePercent}</p>
-                  </button>
-                </li>
-              );
-            }
-          )}
+            return (
+              <li key={i}>
+                <button
+                  className="w-full py-4 px-5 text-title3 bg-white dark:bg-systemGrey6-dark rounded flex justify-between focus:outline-none focus:ring-4"
+                  onClick={voteOnPoll(item.label)}
+                >
+                  <p className="leading-none">{item?.value}</p>
+                  <p className="leading-none">{formattedVotePercent}</p>
+                </button>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="p-4 flex justify-between items-center">
@@ -191,9 +161,5 @@ export default function PollsView() {
       </>
     );
 
-  return (
-    <div className="flex-1 flex justify-center items-center">
-      <p>Waiting for the poll to be created</p>
-    </div>
-  );
+  return <CreatePollForm />;
 }

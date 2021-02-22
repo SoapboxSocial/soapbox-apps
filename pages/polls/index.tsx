@@ -1,4 +1,5 @@
 import { RoomServiceProvider } from "@roomservice/react";
+import Spinner from "../../components/spinner";
 import { useSession } from "../../hooks";
 import { AuthFunction } from "../../lib/roomservice";
 import PollsView from "../../views/polls";
@@ -21,7 +22,9 @@ export default function Polls() {
           <PollsView />
         </main>
       ) : (
-        <main className="flex flex-col min-h-screen">Loading</main>
+        <main className="min-h-screen flex flex-col items-center justify-center">
+          <Spinner />
+        </main>
       )}
     </RoomServiceProvider>
   );
