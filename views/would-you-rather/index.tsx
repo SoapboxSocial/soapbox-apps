@@ -9,6 +9,8 @@ export default function WouldYouRatherView() {
 
   const vote = (option: string) => () => {};
 
+  // auto advance to next option after 15 / 30 seconds
+
   return (
     <main className="flex flex-col min-h-screen">
       <div className="pt-4 px-4">

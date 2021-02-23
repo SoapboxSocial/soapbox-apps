@@ -101,11 +101,8 @@ export default function PollsView() {
         <div className="p-4 flex justify-between items-center">
           <div className="secondary">{formattedVotesCount}</div>
 
-          <button
-            className="text-systemRed-light dark:text-systemRed-dark font-medium"
-            onClick={deletePoll}
-          >
-            Delete Poll
+          <button className="text-soapbox font-medium" onClick={deletePoll}>
+            New Poll
           </button>
         </div>
       </main>
