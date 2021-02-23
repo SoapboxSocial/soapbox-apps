@@ -1,6 +1,6 @@
 import { useMap, usePresence } from "@roomservice/react";
 import { onClose } from "@soapboxsocial/minis.js";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSoapboxRoomId } from "../../hooks";
 import CreatePollForm from "./createPollForm";
 
@@ -14,7 +14,11 @@ type PollsMap = {
   votes?: PollOption[];
 };
 
-export default function PollsView() {
+type Props = {
+  userID: string;
+};
+
+export default function PollsView({ userID }: Props) {
   const soapboxRoomId = useSoapboxRoomId();
 
   const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
@@ -22,6 +26,21 @@ export default function PollsView() {
   const [poll, map] = useMap<PollsMap>(roomServiceRoomName, "mypoll");
 
   const [hasVoted, hasVotedSet] = useState(false);
+
+  const [joined, joinedClient] = usePresence(
+    roomServiceRoomName,
+    "mypoll-joined"
+  );
+
+  useEffect(() => {
+    joinedClient.set("true");
+  }, []);
+
+  const isAdmin = useMemo(() => {
+    if (Object.keys(joined).length === 1) {
+      return Object.keys(joined).pop() === userID;
+    }
+  }, [joined]);
 
   const [voted, votedClient] = usePresence<boolean>(
     roomServiceRoomName,
@@ -56,6 +75,8 @@ export default function PollsView() {
         : `${votesCount} vote`,
     [votesCount]
   );
+
+  if (isAdmin && !poll?.options) return <CreatePollForm />;
 
   if (poll.options)
     return (
@@ -96,12 +117,18 @@ export default function PollsView() {
         <div className="p-4 flex justify-between items-center">
           <div className="secondary">{formattedVotesCount}</div>
 
-          <button className="text-soapbox font-medium" onClick={deletePoll}>
-            New Poll
-          </button>
+          {isAdmin && (
+            <button className="text-soapbox font-medium" onClick={deletePoll}>
+              New Poll
+            </button>
+          )}
         </div>
       </main>
     );
 
-  return <CreatePollForm />;
+  return (
+    <main className="flex flex-col items-center justify-center min-h-screen">
+      <p className="text-title1">Waiting for the poll to be created</p>
+    </main>
+  );
 }

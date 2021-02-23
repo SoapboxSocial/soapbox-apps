@@ -20,7 +20,7 @@ export default function Polls() {
         },
       }}
     >
-      {isOnline ? <PollsView /> : <LoadingView />}
+      {isOnline ? <PollsView userID={String(user.id)} /> : <LoadingView />}
     </RoomServiceProvider>
   );
 }
