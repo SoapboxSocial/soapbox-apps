@@ -4,13 +4,12 @@ import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
 import Button, { CircleIconButton } from "../../components/inputs/button";
 import Input from "../../components/inputs/input";
-import { useSoapboxRoomId } from "../../hooks";
 
-export default function CreatePollForm() {
-  const soapboxRoomId = useSoapboxRoomId();
-
-  const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
-
+export default function CreatePollForm({
+  roomServiceRoomName,
+}: {
+  roomServiceRoomName: string;
+}) {
   const [, map] = useMap(roomServiceRoomName, "mypoll");
 
   const [pollOptions, pollOptionsSet] = useState(2);
@@ -37,6 +36,8 @@ export default function CreatePollForm() {
     <main className="flex flex-col min-h-screen">
       <div className="px-4 pt-4 flex justify-between items-center">
         <h1 className="text-title2 font-bold">Polls</h1>
+
+        <p>{roomServiceRoomName}</p>
       </div>
 
       <form
