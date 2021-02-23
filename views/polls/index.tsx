@@ -23,13 +23,16 @@ export default function PollsView({ userID }: Props) {
 
   const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
 
-  const [poll, map] = useMap<PollsMap>(roomServiceRoomName, "mypoll");
+  const [poll, map] = useMap<PollsMap>(
+    roomServiceRoomName,
+    `${roomServiceRoomName}-poll`
+  );
 
   const [hasVoted, hasVotedSet] = useState(false);
 
   const [joined, joinedClient] = usePresence(
     roomServiceRoomName,
-    "mypoll-joined"
+    `${roomServiceRoomName}-joined`
   );
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export default function PollsView({ userID }: Props) {
 
   const [voted, votedClient] = usePresence<boolean>(
     roomServiceRoomName,
-    "mypoll-voted"
+    `${roomServiceRoomName}-voted`
   );
 
   const voteOnPoll = (option: PollOption) => () => {

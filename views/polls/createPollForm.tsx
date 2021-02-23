@@ -10,7 +10,7 @@ export default function CreatePollForm({
 }: {
   roomServiceRoomName: string;
 }) {
-  const [, map] = useMap(roomServiceRoomName, "mypoll");
+  const [, map] = useMap(roomServiceRoomName, `${roomServiceRoomName}-poll`);
 
   const [pollOptions, pollOptionsSet] = useState(2);
 
