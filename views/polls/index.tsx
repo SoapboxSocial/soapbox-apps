@@ -29,16 +29,20 @@ export default function PollsView() {
   );
 
   const voteOnPoll = (option: PollOption) => () => {
-    hasVotedSet(true);
+    const curVotes = poll?.votes ? poll.votes : [];
+
+    map.set("votes", [...curVotes, option]);
 
     votedClient.set(true);
 
-    map.set("votes", [...poll.votes, option]);
+    hasVotedSet(true);
   };
 
   const deletePoll = () => {
     map.delete("votes");
     map.delete("options");
+
+    hasVotedSet(false);
   };
 
   onClose(deletePoll);
