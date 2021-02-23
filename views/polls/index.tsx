@@ -1,4 +1,4 @@
-import { useList, useMap, usePresence } from "@roomservice/react";
+import { useMap, usePresence } from "@roomservice/react";
 import { onClose } from "@soapboxsocial/minis.js";
 import { useMemo, useState } from "react";
 import { useSoapboxRoomId } from "../../hooks";
@@ -9,20 +9,17 @@ type PollOption = {
   value: string;
 };
 
+type PollsMap = {
+  options?: PollOption[];
+  votes?: PollOption[];
+};
+
 export default function PollsView() {
   const soapboxRoomId = useSoapboxRoomId();
 
   const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
 
-  const [poll, map] = useMap<{ options?: PollOption[]; votes: any }>(
-    roomServiceRoomName,
-    "mypoll"
-  );
-
-  const [votes, list] = useList<PollOption[]>(
-    roomServiceRoomName,
-    "mypoll-votes"
-  );
+  const [poll, map] = useMap<PollsMap>(roomServiceRoomName, "mypoll");
 
   const [hasVoted, hasVotedSet] = useState(false);
 
@@ -36,23 +33,17 @@ export default function PollsView() {
 
     votedClient.set(true);
 
-    list.push(option);
+    map.set("votes", [...poll.votes, option]);
   };
 
-  /**
-   * Used to cleanup the Room Service rooms
-   */
   const deletePoll = () => {
-    for (let i = 0; i < votes.length; i++) {
-      list.delete(i);
-    }
-
+    map.delete("votes");
     map.delete("options");
   };
 
   onClose(deletePoll);
 
-  const votesCount = votes.length;
+  const votesCount = poll?.votes?.length ?? 0;
 
   const formattedVotesCount = useMemo(
     () =>
@@ -71,7 +62,7 @@ export default function PollsView() {
 
         <ul className="flex-1 px-4 space-y-4">
           {poll.options.map((option: PollOption, i) => {
-            const optionVotes = votes.filter(
+            const optionVotes = poll?.votes?.filter(
               (vote) => vote.label === option.label
             ).length;
 
