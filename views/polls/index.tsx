@@ -2,6 +2,7 @@ import { useMap, usePresence } from "@roomservice/react";
 import { onClose } from "@soapboxsocial/minis.js";
 import { useEffect, useMemo, useState } from "react";
 import { useSoapboxRoomId } from "../../hooks";
+import LoadingView from "../loading";
 import CreatePollForm from "./createPollForm";
 
 type PollOption = {
@@ -131,9 +132,5 @@ export default function PollsView({ userID }: Props) {
       </main>
     );
 
-  return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-4">
-      <p className="text-title1">Waiting for the poll to be created</p>
-    </main>
-  );
+  return <LoadingView />;
 }
