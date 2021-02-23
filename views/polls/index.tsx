@@ -66,6 +66,10 @@ export default function PollsView({ userID }: Props) {
     hasVotedSet(true);
   };
 
+  useEffect(() => {
+    hasVotedSet(false);
+  }, [poll.options]);
+
   const deletePoll = () => {
     map.delete("votes");
     map.delete("options");
