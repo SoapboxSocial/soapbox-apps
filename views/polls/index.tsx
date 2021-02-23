@@ -39,9 +39,14 @@ export default function PollsView({ userID }: Props) {
     joinedClient.set("true");
   }, []);
 
-  const isAdmin = useMemo(() => {
-    if (Object.keys(joined).length === 1) {
-      return Object.keys(joined).pop() === userID;
+  const [isAdmin, isAdminSet] = useState(false);
+
+  useEffect(() => {
+    if (
+      Object.keys(joined).length === 1 &&
+      Object.keys(joined).pop() === userID
+    ) {
+      isAdminSet(true);
     }
   }, [joined]);
 
@@ -85,11 +90,7 @@ export default function PollsView({ userID }: Props) {
   if (poll.options)
     return (
       <main className="flex flex-col min-h-screen">
-        <div className="p-4 flex justify-between items-center">
-          <h1 className="text-title2 font-bold">Polls</h1>
-        </div>
-
-        <ul className="flex-1 px-4 space-y-4">
+        <ul className="flex-1 pt-4 px-4 space-y-4">
           {poll.options.map((option: PollOption, i) => {
             const optionVotes = poll?.votes?.filter(
               (vote) => vote.label === option.label
@@ -131,7 +132,7 @@ export default function PollsView({ userID }: Props) {
     );
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen">
+    <main className="flex flex-col items-center justify-center min-h-screen p-4">
       <p className="text-title1">Waiting for the poll to be created</p>
     </main>
   );

@@ -34,10 +34,6 @@ export default function CreatePollForm({
 
   return (
     <main className="flex flex-col min-h-screen">
-      <div className="px-4 pt-4 flex justify-between items-center">
-        <h1 className="text-title2 font-bold">Polls</h1>
-      </div>
-
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex-1 p-4 flex flex-col"
