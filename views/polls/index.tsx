@@ -33,9 +33,6 @@ export default function PollsView({ userID }: Props) {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined")
-      window?.alert(`Room Service Room Name: ${roomServiceRoomName}`);
-
     joinedClient.set("true");
   }, []);
 
