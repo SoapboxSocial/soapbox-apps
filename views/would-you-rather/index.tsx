@@ -22,7 +22,7 @@ type WouldYouRatherMap = {
   timeout: number;
 };
 
-const TIMEOUT = 10;
+const TIMEOUT = 20;
 
 export default function WouldYouRatherView() {
   const soapboxRoomId = useSoapboxRoomId();
