@@ -102,7 +102,7 @@ export default function WouldYouRatherView() {
             </h1>
 
             <div className="absolute right-0 top-1/2 transform-gpu -translate-y-1/2">
-              {wyr?.timeout > 0 ? `${wyr?.timeout}s` : "Times Up!"}
+              {wyr?.timeout > 0 ? `${wyr?.timeout}s` : "Up!"}
             </div>
           </div>
         </div>
