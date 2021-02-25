@@ -39,7 +39,32 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
 
             (window as any).mitt.emit("members", {
               sequence: payload.sequence,
-              data: [USER, USER, USER, USER],
+              data: [
+                {
+                  display_name: "Jeff",
+                  id: 70,
+                  image: "fuck",
+                  username: "jeff",
+                },
+                {
+                  display_name: "Jack",
+                  id: 71,
+                  image: "fuck",
+                  username: "jack",
+                },
+                {
+                  display_name: "Dean",
+                  id: 72,
+                  image: "fuck",
+                  username: "dean",
+                },
+                {
+                  display_name: "Mike",
+                  id: 73,
+                  image: "fuck",
+                  username: "mike",
+                },
+              ],
             });
           },
         },
