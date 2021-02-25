@@ -28,7 +28,7 @@ export default function Prompt({
       <div className="text-title3 text-black font-bold">{text}</div>
 
       <div className="absolute left-4 bottom-4">
-        <span className="font-semibold text-black text-opacity-secondary leading-none">
+        <span className="text-sm font-semibold leading-none text-black text-opacity-secondary">
           {percent.toLocaleString("en-US", {
             style: "percent",
             maximumFractionDigits: 0,
@@ -37,7 +37,7 @@ export default function Prompt({
       </div>
 
       {active && (
-        <div className="absolute right-4 top-4">
+        <div className="absolute right-2 top-2">
           <div className="p-1.5 bg-white text-black rounded-full  shadow-lg">
             <CheckCircle size={16} />
           </div>
