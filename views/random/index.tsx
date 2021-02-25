@@ -44,7 +44,8 @@ export default function RandomView() {
               className="rounded-full ring-4 ring-soapbox"
               draggable={false}
               height={96}
-              src="https://unsplash.it/192/192"
+              loading="eager"
+              src={`https://cdn.soapbox.social/images/${random.chosen.image}`}
               width={96}
             />
 
