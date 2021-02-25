@@ -30,7 +30,7 @@ export default function Prompt({
     <button onClick={onClick} disabled={disabled} className={cachedClassNames}>
       <div className="text-title3 text-black font-bold">{text}</div>
 
-      <div className="absolute left-4 bottom-4">
+      <div className="absolute left-2 bottom-2">
         <span className="font-semibold leading-none text-black">
           {percent.toLocaleString("en-US", {
             style: "percent",
