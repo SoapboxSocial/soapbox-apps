@@ -1,12 +1,14 @@
 import cn from "classnames";
-import { Check, CheckCircle, CheckSquare } from "react-feather";
+import { CheckCircle } from "react-feather";
 
 type Props = {
   active?: boolean;
   className?: string;
   disabled?: boolean;
+  id: string;
   onClick: () => void;
   percent: number;
+  ringColor: string;
   text: string;
 };
 
@@ -16,6 +18,7 @@ export default function Prompt({
   disabled = false,
   onClick,
   percent,
+  ringColor,
   text,
 }: Props) {
   const cachedClassNames = cn(
@@ -28,7 +31,7 @@ export default function Prompt({
       <div className="text-title3 text-black font-bold">{text}</div>
 
       <div className="absolute left-4 bottom-4">
-        <span className="text-sm font-semibold leading-none text-black text-opacity-secondary">
+        <span className="font-semibold leading-none text-black">
           {percent.toLocaleString("en-US", {
             style: "percent",
             maximumFractionDigits: 0,
@@ -38,8 +41,12 @@ export default function Prompt({
 
       {active && (
         <div className="absolute right-2 top-2">
-          <div className="p-1.5 bg-white text-black rounded-full  shadow-lg">
-            <CheckCircle size={16} />
+          <div className="flex -space-x-1">
+            <div
+              className={`p-1 bg-white text-black rounded-full ring-2 ${ringColor}`}
+            >
+              <CheckCircle size={16} />
+            </div>
           </div>
         </div>
       )}

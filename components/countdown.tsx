@@ -14,5 +14,11 @@ export default function Countdown({ timeout }: Props) {
     }
   }, 1);
 
-  return <div className="w-6 h-6 border-4 border-soapbox rounded-full"></div>;
+  return <span>{`${remaining}s`}</span>;
+
+  return (
+    <div className="w-6 h-6 border-4 border-soapbox rounded-full">
+      {remaining}
+    </div>
+  );
 }
