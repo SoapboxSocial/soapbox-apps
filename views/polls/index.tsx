@@ -52,9 +52,8 @@ export default function PollsView({}: Props) {
   }, [poll.options]);
 
   const deletePoll = () => {
-    map.delete("votes");
-    map.delete("options");
-
+    map?.delete("votes");
+    map?.delete("options");
     hasVotedSet(false);
   };
 
