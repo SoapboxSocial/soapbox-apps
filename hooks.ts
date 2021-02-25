@@ -29,3 +29,11 @@ export function useSoapboxRoomId() {
 
   return query?.roomID || null;
 }
+
+export function useParams() {
+  const { query } = useRouter();
+
+  return {
+    isAppOpener: Boolean(query?.isAppOpener),
+  };
+}

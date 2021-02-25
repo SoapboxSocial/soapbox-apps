@@ -1,7 +1,7 @@
 import { useMap, usePresence } from "@roomservice/react";
 import { onClose } from "@soapboxsocial/minis.js";
 import { useEffect, useMemo, useState } from "react";
-import { useSoapboxRoomId } from "../../hooks";
+import { useParams, useSoapboxRoomId } from "../../hooks";
 import LoadingView from "../loading";
 import CreatePollForm from "./createPollForm";
 
@@ -19,8 +19,9 @@ type Props = {
   userID: string;
 };
 
-export default function PollsView({ userID }: Props) {
+export default function PollsView({}: Props) {
   const soapboxRoomId = useSoapboxRoomId();
+  const { isAppOpener } = useParams();
 
   const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
 
@@ -30,26 +31,6 @@ export default function PollsView({ userID }: Props) {
   );
 
   const [hasVoted, hasVotedSet] = useState(false);
-
-  const [joined, joinedClient] = usePresence(
-    roomServiceRoomName,
-    `${roomServiceRoomName}-joined`
-  );
-
-  useEffect(() => {
-    joinedClient.set("true");
-  }, []);
-
-  const [isAdmin, isAdminSet] = useState(false);
-
-  useEffect(() => {
-    if (
-      Object.keys(joined).length === 1 &&
-      Object.keys(joined).pop() === userID
-    ) {
-      isAdminSet(true);
-    }
-  }, [joined]);
 
   const [voted, votedClient] = usePresence<boolean>(
     roomServiceRoomName,
@@ -89,10 +70,10 @@ export default function PollsView({ userID }: Props) {
     [votesCount]
   );
 
-  if (isAdmin && !poll?.options)
+  if (!poll?.options && isAppOpener)
     return <CreatePollForm roomServiceRoomName={roomServiceRoomName} />;
 
-  if (poll.options)
+  if (poll?.options)
     return (
       <main className="flex flex-col min-h-screen">
         <ul className="flex-1 pt-4 px-4 space-y-4">
@@ -127,7 +108,7 @@ export default function PollsView({ userID }: Props) {
         <div className="p-4 flex justify-between items-center">
           <div className="secondary">{formattedVotesCount}</div>
 
-          {isAdmin && (
+          {isAppOpener && (
             <button className="text-soapbox font-medium" onClick={deletePoll}>
               New Poll
             </button>
