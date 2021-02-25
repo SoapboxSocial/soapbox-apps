@@ -10,6 +10,11 @@ module.exports = {
     extend: {
       colors: {
         soapbox: "#8359fe",
+        accent: {
+          pink: "#f990c3",
+          green: "#49e6a4",
+          cyan: "#66eae0",
+        },
         systemGrey: "#8e8e93",
         systemGrey2: { light: "#aeaeb2", dark: "#636366" },
         systemGrey3: { light: "#c7c7cc", dark: "#48484a" },

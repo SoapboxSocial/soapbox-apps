@@ -1,14 +1,32 @@
 [
   {
-    "a": "Be covered in fur",
-    "b": "Be covered in scales"
+    "a": {
+      "id": "fur",
+      "text": "Be covered in fur"
+    },
+    "b": {
+      "id": "scales",
+      "text": "Be covered in scales"
+    }
   },
   {
-    "a": "Have a golden voice",
-    "b": "Have a silver tongue"
+    "a": {
+      "id": "golden",
+      "text": "Have a golden voice"
+    },
+    "b": {
+      "id": "silver",
+      "text": "Have a silver tongue"
+    }
   },
   {
-    "a": "Always be 10 minutes late",
-    "b": "Always be 20 minutes early"
+    "a": {
+      "id": "10-late",
+      "text": "Always be 10 minutes late"
+    },
+    "b": {
+      "id": "20-early",
+      "text": "Always be 20 minutes early"
+    }
   }
 ]
