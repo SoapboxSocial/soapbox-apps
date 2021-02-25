@@ -29,11 +29,18 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
           },
         },
         members: {
-          postMessage: (payload: { sequence: number }) => {
+          postMessage: async (payload: { sequence: number }) => {
             console.log(
               "Handling message handler 'members' with sequence",
               payload.sequence
             );
+
+            await delay(50);
+
+            (window as any).mitt.emit("members", {
+              sequence: payload.sequence,
+              data: [USER, USER, USER, USER],
+            });
           },
         },
         room: {
