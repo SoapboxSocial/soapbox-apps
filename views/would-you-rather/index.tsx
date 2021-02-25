@@ -1,7 +1,7 @@
 import { useMap } from "@roomservice/react";
 import { useCallback, useEffect, useState } from "react";
-import { useStateList } from "react-use";
-import { useSoapboxRoomId } from "../../hooks";
+import { useInterval, useStateList } from "react-use";
+import { useParams, useSoapboxRoomId } from "../../hooks";
 import prompts from "../../would-you-rather.json";
 import LoadingView from "../loading";
 import Prompt from "./prompt";
@@ -19,12 +19,15 @@ type WYRPair = {
 type WouldYouRatherMap = {
   active: WYRPair;
   votes?: WYROption[];
+  timeout: number;
 };
 
 const TIMEOUT = 10;
 
 export default function WouldYouRatherView() {
   const soapboxRoomId = useSoapboxRoomId();
+  const { isAppOpener } = useParams();
+
   const roomServiceRoomName = `soapbox-mini-wyr-${soapboxRoomId}`;
 
   const [wyr, map] = useMap<WouldYouRatherMap>(
@@ -32,9 +35,7 @@ export default function WouldYouRatherView() {
     "wouldYouRather"
   );
 
-  const { next, state, currentIndex } = useStateList(prompts);
-
-  const [votedPromptID, votedPromptIDSet] = useState<string>(null);
+  const { next, state } = useStateList(prompts);
 
   /**
    * Setup Initial WYR Pair
@@ -43,21 +44,33 @@ export default function WouldYouRatherView() {
     map?.set("active", state);
   }, [map]);
 
-  /**
-   * Reset Voted State On Active Change
-   */
-  useEffect(() => {
-    map?.delete("votes");
+  const [votedPromptID, votedPromptIDSet] = useState<string>(null);
 
-    votedPromptIDSet(null);
-  }, [wyr.active]);
-
-  /**
-   * Sync StateList to Room Service Map
-   */
   useEffect(() => {
-    map?.set("active", state);
-  }, [currentIndex]);
+    if (isAppOpener) map?.set("timeout", TIMEOUT);
+  }, [map]);
+
+  useEffect(() => {
+    if (wyr.timeout === 0) {
+      votedPromptIDSet(null);
+    }
+  }, [wyr.timeout]);
+
+  useInterval(() => {
+    if (isAppOpener) {
+      if (wyr.timeout === 0) {
+        next();
+
+        map?.set("active", state);
+
+        map?.delete("votes");
+
+        map?.set("timeout", TIMEOUT);
+      } else {
+        map?.set("timeout", wyr.timeout - 1);
+      }
+    }
+  }, 1000);
 
   const votesCount = wyr?.votes?.length ?? 0;
 
@@ -89,7 +102,7 @@ export default function WouldYouRatherView() {
             </h1>
 
             <div className="absolute right-0 top-1/2 transform-gpu -translate-y-1/2">
-              <button onClick={next}>Next</button>
+              {wyr?.timeout > 0 ? `${wyr?.timeout}s` : "Times Up!"}
             </div>
           </div>
         </div>
