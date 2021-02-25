@@ -30,11 +30,13 @@ export default function WouldYouRatherView() {
   const { next, state: active } = useStateList(prompts);
 
   const [hasVoted, hasVotedSet] = useState(false);
+  const [votedOption, votedOptionSet] = useState<string>(null);
 
   useInterval(() => {
     map.delete("votes");
 
     hasVotedSet(false);
+    votedOptionSet(null);
 
     next();
   }, TIMEOUT);
@@ -57,6 +59,7 @@ export default function WouldYouRatherView() {
 
     map.set("votes", [...currentVotes, option]);
 
+    votedOptionSet(option.id);
     hasVotedSet(true);
   };
 
@@ -77,6 +80,7 @@ export default function WouldYouRatherView() {
 
         <div className="flex-1 p-4 flex flex-col">
           <Prompt
+            active={votedOption === active.a.id}
             className="bg-accent-pink"
             disabled={hasVoted}
             onClick={voteOnOption(active.a)}
@@ -89,6 +93,7 @@ export default function WouldYouRatherView() {
           </div>
 
           <Prompt
+            active={votedOption === active.b.id}
             className="bg-accent-cyan"
             disabled={hasVoted}
             onClick={voteOnOption(active.b)}
