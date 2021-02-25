@@ -49,10 +49,10 @@ export default function RandomView() {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="flex flex-col items-center space-y-4">
           <img
             alt={random.chosen.display_name}
-            className="rounded-full ring-4 ring-soapbox"
+            className="w-24 h-24 rounded-full ring-4 ring-soapbox"
             draggable={false}
             height={96}
             loading="eager"
@@ -60,7 +60,7 @@ export default function RandomView() {
             width={96}
           />
 
-          <p className="text-title1 font-bold text-center">
+          <p className="text-title2 font-bold text-center">
             {random.chosen.display_name}
           </p>
         </div>
