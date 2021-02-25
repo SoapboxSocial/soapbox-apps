@@ -1,8 +1,10 @@
 import { useMap } from "@roomservice/react";
 import { getMembers, User } from "@soapboxsocial/minis.js";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSoapboxRoomId } from "../../hooks";
 import LoadingView from "../loading";
+
+const getRandom = (max: number) => Math.floor(Math.random() * Math.floor(max));
 
 export default function RandomView() {
   const soapboxRoomId = useSoapboxRoomId();
@@ -18,10 +20,7 @@ export default function RandomView() {
       const members = await getMembers();
 
       map?.set("members", members);
-      map?.set(
-        "chosen",
-        members[Math.floor(Math.random() * Math.floor(members.length))]
-      );
+      map?.set("chosen", members[getRandom(members.length)]);
     }
 
     setMembers();
