@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactElement } from "react";
+import cn from "classnames";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
 
@@ -13,15 +14,24 @@ export default function Button(props: ButtonProps) {
 
 interface CircleButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: ReactElement;
+  loading?: boolean;
 }
 
-export function CircleIconButton({ icon, ...rest }: CircleButtonProps) {
+export function CircleIconButton({
+  icon,
+  loading,
+  ...rest
+}: CircleButtonProps) {
+  const buttonIconClassNames = cn({
+    "animate-spin": loading,
+  });
+
   return (
     <button
       className="w-8 h-8 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
       {...rest}
     >
-      {icon}
+      <span className={buttonIconClassNames}>{icon}</span>
     </button>
   );
 }
