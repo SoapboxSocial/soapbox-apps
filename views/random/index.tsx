@@ -1,5 +1,5 @@
 import { useMap } from "@roomservice/react";
-import { getMembers, User } from "@soapboxsocial/minis.js";
+import { getMembers, onClose, User } from "@soapboxsocial/minis.js";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "react-feather";
@@ -39,6 +39,10 @@ export default function RandomView() {
       selectRandomUser();
     }
   }, [map, selectRandomUser]);
+
+  onClose(() => {
+    map?.delete("chosen");
+  });
 
   return (
     <main className="relative grid place-items-center min-h-screen">
