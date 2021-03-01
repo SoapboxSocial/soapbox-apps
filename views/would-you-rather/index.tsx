@@ -35,10 +35,9 @@ export default function WouldYouRatherView() {
     "wouldYouRather"
   );
 
-  const next = useCallback(
-    () => map?.set("active", prompts[getRandom(prompts.length)]),
-    [map]
-  );
+  const next = useCallback(() => {
+    map?.set("active", prompts[getRandom(prompts.length)]);
+  }, [map]);
 
   const [votedPromptText, votedPromptTextSet] = useState<string>(null);
 
