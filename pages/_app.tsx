@@ -64,6 +64,12 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
                   image: "mike.png",
                   username: "mike",
                 },
+                {
+                  display_name: "Roger",
+                  id: 214,
+                  image: "roget.png",
+                  username: "roger",
+                },
               ],
             });
           },
