@@ -1,13 +1,13 @@
 import { useMap } from "@roomservice/react";
 import { useCallback, useEffect, useState } from "react";
-import { useInterval, useStateList } from "react-use";
+import { useInterval } from "react-use";
 import { useParams, useSoapboxRoomId } from "../../hooks";
+import getRandom from "../../lib/getRandom";
 import prompts from "../../would-you-rather.json";
 import LoadingView from "../loading";
 import Prompt from "./prompt";
 
 type WYROption = {
-  id: string;
   text: string;
 };
 
@@ -22,7 +22,7 @@ type WouldYouRatherMap = {
   timeout: number;
 };
 
-const TIMEOUT = 20;
+const TIMEOUT = 5;
 
 export default function WouldYouRatherView() {
   const soapboxRoomId = useSoapboxRoomId();
@@ -35,33 +35,29 @@ export default function WouldYouRatherView() {
     "wouldYouRather"
   );
 
-  const { next, state } = useStateList(prompts);
+  const next = useCallback(
+    () => map?.set("active", prompts[getRandom(prompts.length)]),
+    [map]
+  );
 
-  /**
-   * Setup Initial WYR Pair
-   */
-  useEffect(() => {
-    map?.set("active", state);
-  }, [map]);
-
-  const [votedPromptID, votedPromptIDSet] = useState<string>(null);
+  const [votedPromptText, votedPromptTextSet] = useState<string>(null);
 
   useEffect(() => {
-    if (isAppOpener) map?.set("timeout", TIMEOUT);
-  }, [map]);
+    votedPromptTextSet(null);
+  }, [wyr.active]);
 
   useEffect(() => {
-    if (wyr.timeout === 0) {
-      votedPromptIDSet(null);
+    if (isAppOpener && !wyr?.active) {
+      next();
+
+      map?.set("timeout", TIMEOUT);
     }
-  }, [wyr.timeout]);
+  }, [map, next]);
 
   useInterval(() => {
     if (isAppOpener) {
       if (wyr.timeout === 0) {
         next();
-
-        map?.set("active", state);
 
         map?.delete("votes");
 
@@ -76,8 +72,9 @@ export default function WouldYouRatherView() {
 
   const calcVotePercent = useCallback(
     (option: WYROption) => {
-      const optionVotes = wyr?.votes?.filter((vote) => vote.id === option.id)
-        .length;
+      const optionVotes = wyr?.votes?.filter(
+        (vote) => vote.text === option.text
+      ).length;
 
       return votesCount > 0 ? optionVotes / votesCount : 0;
     },
@@ -89,12 +86,12 @@ export default function WouldYouRatherView() {
 
     map.set("votes", [...currentVotes, option]);
 
-    votedPromptIDSet(option.id);
+    votedPromptTextSet(option.text);
   };
 
   if (wyr?.active)
     return (
-      <main className="flex flex-col min-h-screen">
+      <main className="flex flex-col min-h-screen select-none">
         <div className="pt-4 px-4">
           <div className="relative">
             <h1 className="text-title2 font-bold text-center">
@@ -109,26 +106,24 @@ export default function WouldYouRatherView() {
 
         <div className="flex-1 p-4 flex flex-col">
           <Prompt
-            id={wyr.active.a.id}
-            active={votedPromptID === wyr.active.a.id}
+            active={votedPromptText === wyr.active.a.text}
             className="bg-accent-pink"
             ringColor="ring-accent-pink"
-            disabled={Boolean(votedPromptID)}
+            disabled={Boolean(votedPromptText)}
             onClick={voteOnOption(wyr.active.a)}
             percent={calcVotePercent(wyr.active.a)}
             text={wyr.active.a.text}
           />
 
-          <div className="mx-auto -my-4 text-center h-12 w-12 flex items-center justify-center rounded-full bg-systemGrey6-light dark:bg-black text-primary leading-none font-bold z-50 pointer-events-none select-none">
+          <div className="flex-grow-0 mx-auto -my-4 text-center h-12 w-12 flex items-center justify-center rounded-full bg-systemGrey6-light dark:bg-black text-primary leading-none font-bold z-50 pointer-events-none select-none">
             OR
           </div>
 
           <Prompt
-            id={wyr.active.b.id}
-            active={votedPromptID === wyr.active.b.id}
+            active={votedPromptText === wyr.active.b.text}
             className="bg-accent-cyan"
             ringColor="ring-accent-cyan"
-            disabled={Boolean(votedPromptID)}
+            disabled={Boolean(votedPromptText)}
             onClick={voteOnOption(wyr.active.b)}
             percent={calcVotePercent(wyr.active.b)}
             text={wyr.active.b.text}
