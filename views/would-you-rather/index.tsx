@@ -39,10 +39,14 @@ export default function WouldYouRatherView() {
   const [votedPromptText, votedPromptTextSet] = useState<string>(null);
 
   const next = useCallback(() => {
-    votedPromptTextSet(null);
-
     map?.set("active", prompts[getRandom(prompts.length)]);
   }, [map]);
+
+  useEffect(() => {
+    if (wyr.timeout === 0) {
+      votedPromptTextSet(null);
+    }
+  }, [wyr.timeout]);
 
   useEffect(() => {
     if (isAppOpener && !wyr?.active) {
