@@ -35,7 +35,7 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
               payload.sequence
             );
 
-            await delay(50);
+            await delay(200);
 
             (window as any).mitt.emit("members", {
               sequence: payload.sequence,
