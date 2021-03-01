@@ -1,5 +1,6 @@
 import { useMap } from "@roomservice/react";
 import { getMembers, User } from "@soapboxsocial/minis.js";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "react-feather";
 import { CircleIconButton } from "../../components/inputs/button";
@@ -22,6 +23,8 @@ export default function RandomView() {
   const [isLoading, isLoadingSet] = useState(false);
 
   const selectRandomUser = useCallback(async () => {
+    map?.set("chosen", null);
+
     isLoadingSet(true);
 
     const members = await getMembers();
@@ -37,41 +40,47 @@ export default function RandomView() {
     }
   }, [map, selectRandomUser]);
 
-  if (random?.chosen)
-    return (
-      <main className="relative grid place-items-center min-h-screen">
-        <div className="absolute top-4">
-          <h1 className="text-title2 font-bold text-center">Random Person</h1>
-        </div>
+  return (
+    <main className="relative grid place-items-center min-h-screen">
+      <div className="absolute top-4">
+        <h1 className="text-title2 font-bold text-center">Random Person</h1>
+      </div>
 
-        {isAppOpener && (
-          <div className="absolute top-4 right-4">
-            <CircleIconButton
-              loading={isLoading}
-              type="button"
-              icon={<RefreshCw size={20} />}
-              onClick={selectRandomUser}
-            />
-          </div>
-        )}
-
-        <div className="flex flex-col items-center space-y-4">
-          <img
-            alt={random.chosen.display_name}
-            className="w-24 h-24 rounded-full ring-4 ring-soapbox"
-            draggable={false}
-            height={96}
-            loading="eager"
-            src={`https://cdn.soapbox.social/images/${random.chosen.image}`}
-            width={96}
+      {isAppOpener && (
+        <div className="absolute top-4 right-4">
+          <CircleIconButton
+            loading={isLoading}
+            type="button"
+            icon={<RefreshCw size={20} />}
+            onClick={selectRandomUser}
           />
-
-          <p className="text-title2 font-bold text-center">
-            {random.chosen.display_name}
-          </p>
         </div>
-      </main>
-    );
+      )}
 
-  return <LoadingView />;
+      <AnimatePresence>
+        {random?.chosen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            className="flex flex-col items-center space-y-4"
+          >
+            <img
+              alt={random.chosen.display_name}
+              className="w-24 h-24 rounded-full ring-4 ring-soapbox bg-soapbox"
+              draggable={false}
+              height={96}
+              loading="eager"
+              src={`https://cdn.soapbox.social/images/${random.chosen.image}`}
+              width={96}
+            />
+
+            <p className="text-title2 font-bold text-center">
+              {random.chosen.display_name}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </main>
+  );
 }

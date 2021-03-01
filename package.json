@@ -11,6 +11,7 @@
     "@roomservice/react": "^1.0.6",
     "@soapboxsocial/minis.js": "^2.2.1",
     "classnames": "^2.2.6",
+    "framer-motion": "^3.8.1",
     "mitt": "^2.1.0",
     "next": "10.0.6",
     "react": "17.0.1",
