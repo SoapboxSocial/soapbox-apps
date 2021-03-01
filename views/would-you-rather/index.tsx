@@ -1,4 +1,5 @@
 import { useMap } from "@roomservice/react";
+import { onClose } from "@soapboxsocial/minis.js";
 import { useCallback, useEffect, useState } from "react";
 import { useInterval } from "react-use";
 import { useParams, useSoapboxRoomId } from "../../hooks";
@@ -64,6 +65,12 @@ export default function WouldYouRatherView() {
       }
     }
   }, 1000);
+
+  onClose(() => {
+    map?.delete("active");
+    map?.delete("votes");
+    map?.delete("timeout");
+  });
 
   const votesCount = wyr?.votes?.length ?? 0;
 
