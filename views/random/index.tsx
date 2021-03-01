@@ -1,6 +1,6 @@
 import { useMap } from "@roomservice/react";
 import { getMembers, User } from "@soapboxsocial/minis.js";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "react-feather";
 import { CircleIconButton } from "../../components/inputs/button";
 import { useParams, useSoapboxRoomId } from "../../hooks";
@@ -8,7 +8,6 @@ import getRandom from "../../lib/getRandom";
 import LoadingView from "../loading";
 
 type RandomMap = {
-  members: User[];
   chosen: User;
 };
 
@@ -20,16 +19,22 @@ export default function RandomView() {
 
   const [random, map] = useMap<RandomMap>(roomServiceRoomName, "random");
 
-  const selectRandomUser = useCallback(async () => {
-    if (map?.set) {
-      const members = await getMembers();
+  const [isLoading, isLoadingSet] = useState(false);
 
-      map?.set("chosen", members[getRandom(members.length)]);
-    }
+  const selectRandomUser = useCallback(async () => {
+    isLoadingSet(true);
+
+    const members = await getMembers();
+
+    map?.set("chosen", members[getRandom(members.length)]);
+
+    isLoadingSet(false);
   }, [map]);
 
   useEffect(() => {
-    selectRandomUser();
+    if (!random?.chosen) {
+      selectRandomUser();
+    }
   }, [map, selectRandomUser]);
 
   if (random?.chosen)
@@ -42,6 +47,7 @@ export default function RandomView() {
         {isAppOpener && (
           <div className="absolute top-4 right-4">
             <CircleIconButton
+              loading={isLoading}
               type="button"
               icon={<RefreshCw size={20} />}
               onClick={selectRandomUser}
