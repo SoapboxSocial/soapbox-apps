@@ -4,9 +4,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "react-feather";
 import { CircleIconButton } from "../../components/inputs/button";
+import Spinner from "../../components/spinner";
 import { useParams, useSoapboxRoomId } from "../../hooks";
 import getRandom from "../../lib/getRandom";
-import LoadingView from "../loading";
 
 type RandomMap = {
   chosen: User;
@@ -58,7 +58,7 @@ export default function RandomView() {
       )}
 
       <AnimatePresence>
-        {random?.chosen && (
+        {random?.chosen ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -79,6 +79,8 @@ export default function RandomView() {
               {random.chosen.display_name}
             </p>
           </motion.div>
+        ) : (
+          <Spinner />
         )}
       </AnimatePresence>
     </main>
