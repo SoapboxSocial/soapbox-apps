@@ -7,7 +7,7 @@ type Props = {
 
 export default function LoadingView({ restartCallback }: Props) {
   return (
-    <main className="min-h-screen flex flex-col p-8">
+    <main className="min-h-screen flex flex-col p-4">
       <div className="flex-1 flex items-center justify-center">
         <Spinner />
       </div>
