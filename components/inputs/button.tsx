@@ -1,15 +1,17 @@
 import type { ButtonHTMLAttributes, ReactElement } from "react";
 import cn from "classnames";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  small?: boolean;
+}
 
-export default function Button(props: ButtonProps) {
-  return (
-    <button
-      className="w-full py-3 bg-soapbox rounded text-white text-center text-title2 font-bold focus:outline-none focus:ring-4"
-      {...props}
-    />
+export default function Button({ small, ...rest }: ButtonProps) {
+  const classNames = cn(
+    "w-full bg-soapbox rounded text-white text-center focus:outline-none focus:ring-4",
+    small ? "py-2 text-body font-semibold" : "py-3 text-title2 font-bold"
   );
+
+  return <button className={classNames} {...rest} />;
 }
 
 interface CircleButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

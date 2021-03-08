@@ -56,14 +56,22 @@ export default function WouldYouRatherView() {
     }
   }, [map, next]);
 
+  const [isMiniClosed, isMiniClosedSet] = useState(false);
+
+  const setupMini = () => {
+    isMiniClosedSet(false);
+
+    next();
+
+    map?.delete("votes");
+
+    map?.set("timeout", TIMEOUT);
+  };
+
   useInterval(() => {
     if (isAppOpener) {
       if (wyr.timeout === 0) {
-        next();
-
-        map?.delete("votes");
-
-        map?.set("timeout", TIMEOUT);
+        setupMini();
       } else {
         map?.set("timeout", wyr.timeout - 1);
       }
@@ -74,6 +82,7 @@ export default function WouldYouRatherView() {
     map?.delete("active");
     map?.delete("votes");
     map?.delete("timeout");
+    isMiniClosedSet(true);
   });
 
   const votesCount = wyr?.votes?.length ?? 0;
@@ -140,5 +149,5 @@ export default function WouldYouRatherView() {
       </main>
     );
 
-  return <LoadingView />;
+  return <LoadingView restartCallback={isMiniClosed ? setupMini : null} />;
 }
