@@ -1,7 +1,9 @@
-import { useMap } from "@roomservice/react";
+import { useList, useMap } from "@roomservice/react";
 import { onClose } from "@soapboxsocial/minis.js";
-import { useCallback, useEffect, useState } from "react";
-import { useInterval } from "react-use";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import { ArrowRight } from "react-feather";
+import { useInterval, useStateList } from "react-use";
+import { CircleIconButton } from "../../components/inputs/button";
 import { useParams, useSoapboxRoomId } from "../../hooks";
 import getRandom from "../../lib/getRandom";
 import prompts from "../../would-you-rather.json";
@@ -20,10 +22,8 @@ type WYRPair = {
 type WouldYouRatherMap = {
   active: WYRPair;
   votes?: WYROption[];
-  timeout: number;
+  seen: WYRPair[];
 };
-
-const TIMEOUT = 20;
 
 export default function WouldYouRatherView() {
   const soapboxRoomId = useSoapboxRoomId();
@@ -39,64 +39,69 @@ export default function WouldYouRatherView() {
   const [votedPromptText, votedPromptTextSet] = useState<string>(null);
 
   const next = useCallback(() => {
-    map?.set("active", prompts[getRandom(prompts.length)]);
+    map?.delete("votes");
+
+    let unseen = prompts;
+
+    if (wyr?.seen) {
+      console.log("Seen Prompts", wyr?.seen.length);
+
+      unseen = prompts.filter((_prompt) => {
+        if (wyr.seen.includes(_prompt)) {
+          return false;
+        }
+
+        return true;
+      });
+    }
+
+    console.log("Unseen Prompts", unseen.length);
+
+    const randomPrompt = unseen[getRandom(unseen.length)];
+
+    map?.set("active", randomPrompt);
+
+    map?.set("seen", [...(wyr?.seen ? wyr.seen : []), randomPrompt]);
+  }, [map, wyr.seen]);
+
+  useEffect(() => {
+    if (isAppOpener) {
+      console.log("Setup App");
+
+      next();
+    }
   }, [map]);
 
   useEffect(() => {
-    if (wyr.timeout === 0) {
-      votedPromptTextSet(null);
-    }
-  }, [wyr.timeout]);
-
-  useEffect(() => {
-    if (isAppOpener && !wyr?.active) {
-      next();
-
-      map?.set("timeout", TIMEOUT);
-    }
-  }, [map, next]);
+    if (typeof votedPromptText === "string") votedPromptTextSet(null);
+  }, [wyr.active]);
 
   const [isMiniClosed, isMiniClosedSet] = useState(false);
 
   const setupMini = () => {
-    isMiniClosedSet(false);
-
-    next();
-
-    map?.delete("votes");
-
-    map?.set("timeout", TIMEOUT);
-  };
-
-  useInterval(() => {
-    if (isAppOpener) {
-      if (wyr.timeout === 0) {
-        setupMini();
-      } else {
-        map?.set("timeout", wyr.timeout - 1);
-      }
-    }
-  }, 1000);
-
-  onClose(() => {
+    map?.delete("seen");
     map?.delete("active");
     map?.delete("votes");
-    map?.delete("timeout");
+
+    next();
+  };
+
+  onClose(() => {
+    map?.delete("seen");
+    map?.delete("active");
+    map?.delete("votes");
+
     isMiniClosedSet(true);
   });
 
   const votesCount = wyr?.votes?.length ?? 0;
 
-  const calcVotePercent = useCallback(
-    (option: WYROption) => {
-      const optionVotes = wyr?.votes?.filter(
-        (vote) => vote.text === option.text
-      ).length;
+  const calcVotePercent = (option: WYROption) => {
+    const optionVotes = wyr?.votes?.filter((vote) => vote.text === option.text)
+      .length;
 
-      return votesCount > 0 ? optionVotes / votesCount : 0;
-    },
-    [votesCount]
-  );
+    return votesCount > 0 ? optionVotes / votesCount : 0;
+  };
 
   const voteOnOption = (option: WYROption) => () => {
     const currentVotes = wyr?.votes ? wyr.votes : [];
@@ -115,9 +120,14 @@ export default function WouldYouRatherView() {
               Would You Rather
             </h1>
 
-            <div className="absolute right-0 top-1/2 transform-gpu -translate-y-1/2">
-              {wyr?.timeout > 0 ? `${wyr?.timeout}s` : "Up!"}
-            </div>
+            {isAppOpener && (
+              <div className="absolute right-0 top-1/2 transform-gpu -translate-y-1/2">
+                <CircleIconButton
+                  icon={<ArrowRight size={20} />}
+                  onClick={next}
+                />
+              </div>
+            )}
           </div>
         </div>
 
