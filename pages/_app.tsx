@@ -1,13 +1,9 @@
 import type { AppProps } from "next/dist/next-server/lib/router/router";
 import delay from "../lib/delay";
+import getRandom from "../lib/getRandom";
 import "../styles/globals.css";
 
-const USER = {
-  display_name: "Jeff",
-  id: 70,
-  image: "fuck",
-  username: "jeff",
-};
+const getUserID = () => getRandom(1024);
 
 export default function SoapboxApp({ Component, pageProps }: AppProps) {
   if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
@@ -24,7 +20,12 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
 
             (window as any).mitt.emit("user", {
               sequence: payload.sequence,
-              data: USER,
+              data: {
+                display_name: "Jeff",
+                id: getUserID(),
+                image: "fuck",
+                username: "jeff",
+              },
             });
           },
         },
@@ -42,31 +43,31 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
               data: [
                 {
                   display_name: "Jeff",
-                  id: 70,
+                  id: getUserID(),
                   image: "jeff.png",
                   username: "jeff",
                 },
                 {
                   display_name: "Jack",
-                  id: 123,
+                  id: getUserID(),
                   image: "jack.png",
                   username: "jack",
                 },
                 {
                   display_name: "Dean",
-                  id: 1,
+                  id: getUserID(),
                   image: "dean.png",
                   username: "dean",
                 },
                 {
                   display_name: "Mike",
-                  id: 234,
+                  id: getUserID(),
                   image: "mike.png",
                   username: "mike",
                 },
                 {
                   display_name: "Roger",
-                  id: 214,
+                  id: getUserID(),
                   image: "roget.png",
                   username: "roger",
                 },
