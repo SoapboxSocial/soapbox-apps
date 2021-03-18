@@ -1,8 +1,7 @@
-import { useList, useMap } from "@roomservice/react";
+import { useMap } from "@roomservice/react";
 import { onClose } from "@soapboxsocial/minis.js";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowRight } from "react-feather";
-import { useInterval, useStateList } from "react-use";
 import { CircleIconButton } from "../../components/inputs/button";
 import { useParams, useSoapboxRoomId } from "../../hooks";
 import getRandom from "../../lib/getRandom";
