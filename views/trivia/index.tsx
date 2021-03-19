@@ -2,10 +2,11 @@ import { useMap } from "@roomservice/react";
 import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useInterval } from "react-use";
-import { useSoapboxRoomId } from "../../hooks";
+import { useParams, useSoapboxRoomId } from "../../hooks";
 import LoadingView from "../loading";
+import { useChannel, useEvent } from "@harelpls/use-pusher";
 
 type Question = {
   category: string;
@@ -16,89 +17,73 @@ type Question = {
   incorrect_answers: ["True" | "False"];
 };
 
-const getQuestion = async () => {
-  type Data = {
-    success: boolean;
-    result: {
-      active: Question;
-      remaining: number;
-    };
-  };
-
-  const r = await fetch(`http://localhost:8080/trivia/question`);
-
-  const { result }: Data = await r.json();
-
-  const { active } = result;
-
-  return active;
-};
-
 type TriviaState = {
   active: Question;
   votes?: string[];
 };
 
+const TRIVIA_SERVER_BASE_URL = "http://localhost:8080";
+
 export default function TriviaView() {
+  const { isAppOpener } = useParams();
+
   const soapboxRoomId = useSoapboxRoomId();
 
   const roomServiceRoomName = `soapbox-mini-trivia-${soapboxRoomId}`;
 
+  const [activeQuestion, activeQuestionSet] = useState<Question>();
+
+  /**
+   * Change this to be based on room ID
+   */
+  const channel = useChannel("trivia");
+
+  useEvent(channel, "question", (data: { question: Question }) =>
+    activeQuestionSet(data.question)
+  );
+
+  const init = useCallback(async () => {
+    console.log("[init]");
+
+    try {
+      await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/setup`);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   const [state, map] = useMap<TriviaState>(roomServiceRoomName, "trivia");
-
-  async function initializeMini() {
-    console.log("[initializeMini]");
-
-    if (typeof map !== "undefined") {
-      try {
-        const active = await getQuestion();
-
-        map.set("active", active);
-      } catch (error) {
-        initializeMini();
-        console.error(error);
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (!state?.active) {
-      initializeMini();
-    }
-  }, [map]);
-
-  const restartMini = () => {
-    console.log("[restartMini]");
-
-    map?.delete("active");
-    map?.delete("votes");
-
-    initializeMini();
-  };
 
   const [isMiniClosed, isMiniClosedSet] = useState(false);
 
-  onClose(() => {
+  onClose(async () => {
     console.log("[onClose]");
 
-    map?.delete("active");
-    map?.delete("votes");
+    activeQuestionSet(null);
+
+    await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/reset`);
 
     isMiniClosedSet(true);
   });
 
-  const [votedQuestion, votedQuestionSet] = useState<string>(null);
+  const [votedAnswer, votedAnswerSet] = useState<string>(null);
 
   useEffect(() => {
-    if (typeof votedQuestion === "string") votedQuestionSet(null);
-  }, [state.active]);
+    if (typeof votedAnswer === "string") votedAnswerSet(null);
+  }, [activeQuestion]);
 
-  const voteOnQuestion = (answer: string) => () => {
-    votedQuestionSet(answer);
+  const [votes, votesSet] = useState<string[]>([]);
 
-    const currentVotes = state?.votes ? state.votes : [];
+  const voteOnQuestion = (answer: string) => async () => {
+    votedAnswerSet(answer);
 
-    map.set("votes", [...currentVotes, answer]);
+    await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/vote`, {
+      method: "POST",
+      body: JSON.stringify({ vote: answer }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    map.set("votes", [...votes, answer]);
   };
 
   const calcVoteCount = (answer: string) => {
@@ -108,7 +93,15 @@ export default function TriviaView() {
     return answerVotes;
   };
 
-  if (state?.active)
+  if (isAppOpener && !activeQuestion) {
+    return (
+      <main className="flex flex-col min-h-screen select-none">
+        <button onClick={init}>Setup Trivia</button>
+      </main>
+    );
+  }
+
+  if (activeQuestion)
     return (
       <main className="flex flex-col min-h-screen select-none">
         <div className="pt-4 px-4">
@@ -123,31 +116,31 @@ export default function TriviaView() {
           <p
             className="text-body font-bold text-center break-words"
             dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(state.active.question),
+              __html: DOMPurify.sanitize(activeQuestion.question),
             }}
           />
         </div>
 
         <div className="p-4 space-y-2">
           <TriviaButton
-            active={votedQuestion === "True"}
+            active={votedAnswer === "True"}
             correct={
-              votedQuestion === "True" &&
-              votedQuestion === state.active.correct_answer
+              votedAnswer === "True" &&
+              votedAnswer === activeQuestion.correct_answer
             }
-            disabled={votedQuestion}
+            disabled={votedAnswer}
             onClick={voteOnQuestion("True")}
             text="True"
             voteCount={calcVoteCount("True")}
           />
 
           <TriviaButton
-            active={votedQuestion === "False"}
+            active={votedAnswer === "False"}
             correct={
-              votedQuestion === "False" &&
-              votedQuestion === state.active.correct_answer
+              votedAnswer === "False" &&
+              votedAnswer === activeQuestion.correct_answer
             }
-            disabled={votedQuestion}
+            disabled={votedAnswer}
             onClick={voteOnQuestion("False")}
             text="False"
             voteCount={calcVoteCount("False")}
@@ -156,23 +149,21 @@ export default function TriviaView() {
       </main>
     );
 
-  return <LoadingView restartCallback={isMiniClosed ? restartMini : null} />;
+  return <LoadingView restartCallback={isMiniClosed ? init : null} />;
 }
 
 function Timer() {
-  const duration = 10;
+  type Data = {
+    timer: number;
+  };
 
-  /**
-   * Hook up to Server
-   */
+  const duration = 30;
+
   const [timer, timerSet] = useState(0);
-  useInterval(async () => {
-    if (timer === duration) {
-      timerSet(0);
-    } else {
-      timerSet((prev) => prev + 1);
-    }
-  }, 1000);
+
+  const channel = useChannel("trivia");
+
+  useEvent(channel, "timer", (data: Data) => timerSet(data.timer));
 
   const radius = 16;
   const circumference = 2 * Math.PI * radius;

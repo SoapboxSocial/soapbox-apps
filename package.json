@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@harelpls/use-pusher": "^7.2.1",
     "@roomservice/react": "^1.0.6",
     "@soapboxsocial/minis.js": "^2.2.1",
     "classnames": "^2.2.6",
