@@ -7,6 +7,7 @@ import { useInterval } from "react-use";
 import { useParams, useSoapboxRoomId } from "../../hooks";
 import LoadingView from "../loading";
 import { useChannel, useEvent } from "@harelpls/use-pusher";
+import Button from "../../components/inputs/button";
 
 type Question = {
   category: string;
@@ -29,8 +30,6 @@ export default function TriviaView() {
 
   const soapboxRoomId = useSoapboxRoomId();
 
-  const roomServiceRoomName = `soapbox-mini-trivia-${soapboxRoomId}`;
-
   const [activeQuestion, activeQuestionSet] = useState<Question>();
 
   /**
@@ -52,20 +51,6 @@ export default function TriviaView() {
     }
   }, []);
 
-  const [state, map] = useMap<TriviaState>(roomServiceRoomName, "trivia");
-
-  const [isMiniClosed, isMiniClosedSet] = useState(false);
-
-  onClose(async () => {
-    console.log("[onClose]");
-
-    activeQuestionSet(null);
-
-    await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/reset`);
-
-    isMiniClosedSet(true);
-  });
-
   const [votedAnswer, votedAnswerSet] = useState<string>(null);
 
   useEffect(() => {
@@ -73,6 +58,10 @@ export default function TriviaView() {
   }, [activeQuestion]);
 
   const [votes, votesSet] = useState<string[]>([]);
+
+  useEvent(channel, "vote", (data: { votes: string[] }) =>
+    votesSet(data.votes)
+  );
 
   const voteOnQuestion = (answer: string) => async () => {
     votedAnswerSet(answer);
@@ -82,21 +71,33 @@ export default function TriviaView() {
       body: JSON.stringify({ vote: answer }),
       headers: { "Content-Type": "application/json" },
     });
-
-    map.set("votes", [...votes, answer]);
   };
 
-  const calcVoteCount = (answer: string) => {
-    const answerVotes =
-      state?.votes?.filter((vote) => vote === answer)?.length ?? 0;
+  const calcVoteCount = (answer: string) =>
+    votes.filter((vote) => vote === answer).length;
 
-    return answerVotes;
-  };
+  /**
+   * Mini Cleanup
+   */
+
+  const [isMiniClosed, isMiniClosedSet] = useState(false);
+
+  onClose(async () => {
+    console.log("[onClose]");
+
+    activeQuestionSet(null);
+
+    await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/reset`);
+
+    isMiniClosedSet(true);
+  });
 
   if (isAppOpener && !activeQuestion) {
     return (
       <main className="flex flex-col min-h-screen select-none">
-        <button onClick={init}>Setup Trivia</button>
+        <div className="p-4">
+          <Button onClick={init}>Setup Trivia</Button>
+        </div>
       </main>
     );
   }
