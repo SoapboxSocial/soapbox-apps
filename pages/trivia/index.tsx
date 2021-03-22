@@ -1,9 +1,9 @@
-import { PusherProvider } from "@harelpls/use-pusher";
+import { PusherProvider, PusherProviderProps } from "@harelpls/use-pusher";
 import RoomService from "../../components/roomService";
 import TriviaView from "../../views/trivia";
 
-const config = {
-  clientKey: "5d3a6dfd9bbec762d06a",
+const config: PusherProviderProps = {
+  clientKey: process.env.PUSHER_CLIENT_KEY,
   cluster: "eu",
 };
 
