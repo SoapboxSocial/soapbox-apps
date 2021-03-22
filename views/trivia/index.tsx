@@ -2,7 +2,7 @@ import { useChannel, useEvent } from "@harelpls/use-pusher";
 import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
 import { useParams, useSoapboxRoomId, useTriviaCategories } from "../../hooks";
@@ -38,10 +38,20 @@ export default function TriviaView() {
   const [activeQuestion, activeQuestionSet] = useState<Question>();
 
   useEvent(channel, "question", (data: { question: Question }) => {
-    console.log("Received 'question' event");
+    console.log("Received 'question' event with payload", data);
 
     activeQuestionSet(data.question);
   });
+
+  const questions = useMemo(() => {
+    if (activeQuestion)
+      return shuffle([
+        activeQuestion.correct_answer,
+        ...activeQuestion.incorrect_answers,
+      ]);
+
+    return null;
+  }, [activeQuestion]);
 
   const init = useCallback(async () => {
     console.log("[init]");
@@ -64,7 +74,7 @@ export default function TriviaView() {
   const [votes, votesSet] = useState<string[]>([]);
 
   useEvent(channel, "vote", (data: { votes: string[] }) => {
-    console.log("Received 'vote' event");
+    console.log("Received 'vote' event with payload", data);
 
     votesSet(data.votes);
   });
@@ -88,15 +98,18 @@ export default function TriviaView() {
 
   const [isMiniClosed, isMiniClosedSet] = useState(false);
 
-  const handleOnClose = useCallback(async () => {
-    console.log("[onClose]");
+  useEffect(() => {
+    onClose(async () => {
+      isMiniClosedSet(true);
 
-    await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/reset`);
+      activeQuestionSet(null);
+      votedAnswerSet(null);
+      categorySet("all");
+      votesSet([]);
 
-    isMiniClosedSet(true);
-  }, [soapboxRoomId]);
-
-  onClose(handleOnClose);
+      await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/reset`);
+    });
+  }, []);
 
   if (!activeQuestion && isAppOpener && categories) {
     return (
@@ -138,10 +151,7 @@ export default function TriviaView() {
         </div>
 
         <div className="px-4 pb-4 space-y-2">
-          {shuffle([
-            activeQuestion.correct_answer,
-            ...activeQuestion.incorrect_answers,
-          ]).map((question) => (
+          {questions.map((question) => (
             <TriviaButton
               active={votedAnswer === question}
               correct={
@@ -172,7 +182,7 @@ function Timer() {
   const [timer, timerSet] = useState(0);
 
   useEvent(channel, "timer", (data: { timer: number }) => {
-    console.log("Received 'timer' event");
+    console.log("Received 'timer' event with payload", data);
 
     timerSet(data.timer);
   });
