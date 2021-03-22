@@ -7,14 +7,15 @@ import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
 import { useParams, useSoapboxRoomId, useTriviaCategories } from "../../hooks";
 import LoadingView from "../loading";
+import shuffle from "lodash.shuffle";
 
-type Question = {
+export type Question = {
   category: string;
-  type: "boolean";
+  correct_answer: string;
   difficulty: "easy" | "medium" | "hard";
+  incorrect_answers: string[];
   question: string;
-  correct_answer: "True" | "False";
-  incorrect_answers: ["True" | "False"];
+  type: "boolean" | "multiple";
 };
 
 const TRIVIA_SERVER_BASE_URL = "http://localhost:8080";
@@ -137,10 +138,10 @@ export default function TriviaView() {
         </div>
 
         <div className="px-4 pb-4 space-y-2">
-          {[
+          {shuffle([
             activeQuestion.correct_answer,
             ...activeQuestion.incorrect_answers,
-          ].map((question) => (
+          ]).map((question) => (
             <TriviaButton
               active={votedAnswer === question}
               correct={
