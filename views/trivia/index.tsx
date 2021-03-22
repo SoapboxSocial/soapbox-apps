@@ -3,10 +3,9 @@ import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import useSWR from "swr";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
-import { useParams, useSoapboxRoomId } from "../../hooks";
+import { useParams, useSoapboxRoomId, useTriviaCategories } from "../../hooks";
 import LoadingView from "../loading";
 
 type Question = {
@@ -18,52 +17,22 @@ type Question = {
   incorrect_answers: ["True" | "False"];
 };
 
-type TriviaState = {
-  active: Question;
-  votes?: string[];
-};
-
 const TRIVIA_SERVER_BASE_URL = "http://localhost:8080";
-
-const getCategories = async () => {
-  type Data = {
-    trivia_categories: { id: number; name: string }[];
-  };
-
-  const r = await fetch(`https://opentdb.com/api_category.php`);
-
-  const { trivia_categories }: Data = await r.json();
-
-  const cleaned = trivia_categories.map((val) => ({
-    label: val.name.replace("Entertainment:", "").replace("Science:", ""),
-    value: val.id.toString(),
-  }));
-
-  return cleaned;
-};
-
-function useCategories() {
-  const { data } = useSWR("Categories", getCategories);
-
-  return data;
-}
 
 export default function TriviaView() {
   const { isAppOpener } = useParams();
 
   const soapboxRoomId = useSoapboxRoomId();
 
-  const categories = useCategories();
+  const channelName = `mini-trivia-${soapboxRoomId}`;
+  const channel = useChannel(channelName);
 
-  const [category, categorySet] = useState<string>();
+  const categories = useTriviaCategories();
+
+  const [category, categorySet] = useState<string>("all");
 
   const handleSelect = (event: ChangeEvent<HTMLSelectElement>) =>
     categorySet(event.target.value);
-
-  /**
-   * Change this to be based on room ID
-   */
-  const channel = useChannel("trivia");
 
   const [activeQuestion, activeQuestionSet] = useState<Question>();
 
@@ -114,28 +83,36 @@ export default function TriviaView() {
 
   const [isMiniClosed, isMiniClosedSet] = useState(false);
 
-  onClose(async () => {
+  const handleOnClose = useCallback(async () => {
     console.log("[onClose]");
-
-    activeQuestionSet(null);
 
     await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/reset`);
 
     isMiniClosedSet(true);
-  });
+  }, [soapboxRoomId]);
 
-  if (isAppOpener && !activeQuestion && categories) {
+  onClose(handleOnClose);
+
+  if (!activeQuestion && isAppOpener && categories) {
     return (
       <main className="flex flex-col min-h-screen select-none">
-        <div className="p-4 space-y-4">
-          <label htmlFor="category">Category</label>
-          <Select
-            id="category"
-            onChange={handleSelect}
-            options={[{ label: "All", value: "" }, ...categories]}
-          />
+        <div className="flex-1 p-4 flex flex-col">
+          <div className="flex-1">
+            <label className="flex mb-2" htmlFor="category">
+              <span className="text-body">Category</span>
+            </label>
 
-          <Button onClick={init}>Setup Trivia</Button>
+            <Select
+              id="category"
+              onChange={handleSelect}
+              value={category}
+              options={[{ label: "All", value: "all" }, ...categories]}
+            />
+          </div>
+
+          <div className="pt-4">
+            <Button onClick={init}>Start Trivia</Button>
+          </div>
         </div>
       </main>
     );
@@ -193,17 +170,21 @@ export default function TriviaView() {
 }
 
 function Timer() {
-  type Data = {
-    timer: number;
-  };
+  const soapboxRoomId = useSoapboxRoomId();
 
-  const duration = 30;
+  const channelName = `mini-trivia-${soapboxRoomId}`;
+
+  const channel = useChannel(channelName);
 
   const [timer, timerSet] = useState(0);
 
-  const channel = useChannel("trivia");
+  useEvent(channel, "timer", (data: { timer: number }) => {
+    console.log("Received 'timer' event");
 
-  useEvent(channel, "timer", (data: Data) => timerSet(data.timer));
+    timerSet(data.timer);
+  });
+
+  const duration = 30;
 
   const radius = 16;
   const circumference = 2 * Math.PI * radius;

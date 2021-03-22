@@ -1,5 +1,4 @@
 import { PusherProvider, PusherProviderProps } from "@harelpls/use-pusher";
-import RoomService from "../../components/roomService";
 import TriviaView from "../../views/trivia";
 
 const config: PusherProviderProps = {
@@ -10,9 +9,7 @@ const config: PusherProviderProps = {
 export default function Trivia() {
   return (
     <PusherProvider {...config}>
-      <RoomService>
-        <TriviaView />
-      </RoomService>
+      <TriviaView />
     </PusherProvider>
   );
 }
