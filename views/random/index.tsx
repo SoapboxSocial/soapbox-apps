@@ -40,9 +40,11 @@ export default function RandomView() {
     }
   }, [map, selectRandomUser]);
 
-  onClose(() => {
-    map?.delete("chosen");
-  });
+  useEffect(() => {
+    onClose(() => {
+      map?.delete("chosen");
+    });
+  }, []);
 
   return (
     <main className="relative grid place-items-center min-h-screen">

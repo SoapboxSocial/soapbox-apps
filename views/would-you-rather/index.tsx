@@ -86,13 +86,15 @@ export default function WouldYouRatherView() {
     next();
   };
 
-  onClose(() => {
-    map?.delete("seen");
-    map?.delete("active");
-    map?.delete("votes");
+  useEffect(() => {
+    onClose(() => {
+      map?.delete("seen");
+      map?.delete("active");
+      map?.delete("votes");
 
-    isMiniClosedSet(true);
-  });
+      isMiniClosedSet(true);
+    });
+  }, []);
 
   const votesCount = wyr?.votes?.length ?? 0;
 

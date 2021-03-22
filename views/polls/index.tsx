@@ -57,7 +57,9 @@ export default function PollsView({}: Props) {
     hasVotedSet(false);
   };
 
-  onClose(deletePoll);
+  useEffect(() => {
+    onClose(deletePoll);
+  }, []);
 
   const votesCount = poll?.votes?.length ?? 0;
 
