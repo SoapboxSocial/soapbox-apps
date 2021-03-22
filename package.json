@@ -14,6 +14,7 @@
     "classnames": "^2.2.6",
     "dompurify": "^2.2.7",
     "framer-motion": "^3.8.1",
+    "lodash.chunk": "^4.2.0",
     "mitt": "^2.1.0",
     "next": "10.0.6",
     "react": "17.0.1",

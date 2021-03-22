@@ -36,9 +36,11 @@ export default function TriviaView() {
 
   const [activeQuestion, activeQuestionSet] = useState<Question>();
 
-  useEvent(channel, "question", (data: { question: Question }) =>
-    activeQuestionSet(data.question)
-  );
+  useEvent(channel, "question", (data: { question: Question }) => {
+    console.log("Received 'question' event");
+
+    activeQuestionSet(data.question);
+  });
 
   const init = useCallback(async () => {
     console.log("[init]");
@@ -60,9 +62,11 @@ export default function TriviaView() {
 
   const [votes, votesSet] = useState<string[]>([]);
 
-  useEvent(channel, "vote", (data: { votes: string[] }) =>
-    votesSet(data.votes)
-  );
+  useEvent(channel, "vote", (data: { votes: string[] }) => {
+    console.log("Received 'vote' event");
+
+    votesSet(data.votes);
+  });
 
   const voteOnQuestion = (answer: string) => async () => {
     votedAnswerSet(answer);
@@ -120,16 +124,10 @@ export default function TriviaView() {
 
   if (activeQuestion)
     return (
-      <main className="flex flex-col min-h-screen select-none">
-        <div className="pt-4 px-4">
-          <div className="relative">
-            <h1 className="text-title2 font-bold text-center">Trivia</h1>
+      <main className="flex flex-col min-h-screen select-none relative">
+        <Timer />
 
-            <Timer />
-          </div>
-        </div>
-
-        <div className="flex-1 p-4 flex items-center justify-center">
+        <div className="flex-1 px-4 flex items-center justify-center">
           <p
             className="text-body font-bold text-center break-words"
             dangerouslySetInnerHTML={{
@@ -138,30 +136,24 @@ export default function TriviaView() {
           />
         </div>
 
-        <div className="p-4 space-y-2">
-          <TriviaButton
-            active={votedAnswer === "True"}
-            correct={
-              votedAnswer === "True" &&
-              votedAnswer === activeQuestion.correct_answer
-            }
-            disabled={votedAnswer}
-            onClick={voteOnQuestion("True")}
-            text="True"
-            voteCount={calcVoteCount("True")}
-          />
-
-          <TriviaButton
-            active={votedAnswer === "False"}
-            correct={
-              votedAnswer === "False" &&
-              votedAnswer === activeQuestion.correct_answer
-            }
-            disabled={votedAnswer}
-            onClick={voteOnQuestion("False")}
-            text="False"
-            voteCount={calcVoteCount("False")}
-          />
+        <div className="px-4 pb-4 space-y-2">
+          {[
+            activeQuestion.correct_answer,
+            ...activeQuestion.incorrect_answers,
+          ].map((question) => (
+            <TriviaButton
+              active={votedAnswer === question}
+              correct={
+                votedAnswer === question &&
+                votedAnswer === activeQuestion.correct_answer
+              }
+              disabled={votedAnswer}
+              onClick={voteOnQuestion(question)}
+              key={question}
+              text={question}
+              voteCount={calcVoteCount(question)}
+            />
+          ))}
         </div>
       </main>
     );
@@ -184,45 +176,15 @@ function Timer() {
     timerSet(data.timer);
   });
 
-  const duration = 30;
-
-  const radius = 16;
-  const circumference = 2 * Math.PI * radius;
-
-  const offset = circumference - (timer / duration) * circumference;
+  const DURATION = 15;
 
   return (
-    <svg
-      className="absolute right-0 top-1/2 transform-gpu -translate-y-1/2 h-8 w-8 rounded-full"
-      width={32}
-      height={32}
-    >
-      <defs>
-        <linearGradient id="progress-ring__gradient">
-          <stop offset="0%" stopColor="#4d3bff" />
-          <stop offset="100%" stopColor="#a161ff" />
-        </linearGradient>
-      </defs>
-
-      <circle
-        className="progress-ring__circle"
-        cx={16}
-        cy={16}
-        r={radius}
-        stroke="url(#progress-ring__gradient)"
-        strokeDasharray={`${circumference} ${circumference}`}
-        strokeDashoffset={offset}
-        strokeWidth={8}
+    <div className="absolute top-0 right-0 left-0">
+      <div
+        className="h-1 bg-soapbox"
+        style={{ width: `${(timer / DURATION) * 100}%` }}
       />
-
-      <style jsx>{`
-        .progress-ring__circle {
-          transform-origin: center;
-          transform: rotate(-90deg);
-          transition: stroke-dashoffset 0.5s;
-        }
-      `}</style>
-    </svg>
+    </div>
   );
 }
 
