@@ -3,7 +3,7 @@ import RoomService from "../../components/roomService";
 import TriviaView from "../../views/trivia";
 
 const config: PusherProviderProps = {
-  clientKey: process.env.PUSHER_CLIENT_KEY,
+  clientKey: process.env.NEXT_PUBLIC_PUSHER_CLIENT_KEY,
   cluster: "eu",
 };
 

@@ -1,13 +1,13 @@
-import { useMap } from "@roomservice/react";
+import { useChannel, useEvent } from "@harelpls/use-pusher";
 import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
-import { useCallback, useEffect, useState } from "react";
-import { useInterval } from "react-use";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import useSWR from "swr";
+import Button from "../../components/inputs/button";
+import Select from "../../components/inputs/select";
 import { useParams, useSoapboxRoomId } from "../../hooks";
 import LoadingView from "../loading";
-import { useChannel, useEvent } from "@harelpls/use-pusher";
-import Button from "../../components/inputs/button";
 
 type Question = {
   category: string;
@@ -25,17 +25,47 @@ type TriviaState = {
 
 const TRIVIA_SERVER_BASE_URL = "http://localhost:8080";
 
+const getCategories = async () => {
+  type Data = {
+    trivia_categories: { id: number; name: string }[];
+  };
+
+  const r = await fetch(`https://opentdb.com/api_category.php`);
+
+  const { trivia_categories }: Data = await r.json();
+
+  const cleaned = trivia_categories.map((val) => ({
+    label: val.name.replace("Entertainment:", "").replace("Science:", ""),
+    value: val.id.toString(),
+  }));
+
+  return cleaned;
+};
+
+function useCategories() {
+  const { data } = useSWR("Categories", getCategories);
+
+  return data;
+}
+
 export default function TriviaView() {
   const { isAppOpener } = useParams();
 
   const soapboxRoomId = useSoapboxRoomId();
 
-  const [activeQuestion, activeQuestionSet] = useState<Question>();
+  const categories = useCategories();
+
+  const [category, categorySet] = useState<string>();
+
+  const handleSelect = (event: ChangeEvent<HTMLSelectElement>) =>
+    categorySet(event.target.value);
 
   /**
    * Change this to be based on room ID
    */
   const channel = useChannel("trivia");
+
+  const [activeQuestion, activeQuestionSet] = useState<Question>();
 
   useEvent(channel, "question", (data: { question: Question }) =>
     activeQuestionSet(data.question)
@@ -45,11 +75,13 @@ export default function TriviaView() {
     console.log("[init]");
 
     try {
-      await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/setup`);
+      await fetch(
+        `${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/setup?category=${category}`
+      );
     } catch (error) {
       console.error(error);
     }
-  }, []);
+  }, [category, soapboxRoomId]);
 
   const [votedAnswer, votedAnswerSet] = useState<string>(null);
 
@@ -92,10 +124,17 @@ export default function TriviaView() {
     isMiniClosedSet(true);
   });
 
-  if (isAppOpener && !activeQuestion) {
+  if (isAppOpener && !activeQuestion && categories) {
     return (
       <main className="flex flex-col min-h-screen select-none">
-        <div className="p-4">
+        <div className="p-4 space-y-4">
+          <label htmlFor="category">Category</label>
+          <Select
+            id="category"
+            onChange={handleSelect}
+            options={[{ label: "All", value: "" }, ...categories]}
+          />
+
           <Button onClick={init}>Setup Trivia</Button>
         </div>
       </main>
