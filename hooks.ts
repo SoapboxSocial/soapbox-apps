@@ -75,7 +75,7 @@ const getTriviaCategories = async () => {
   const { trivia_categories }: Data = await r.json();
 
   const cleaned = trivia_categories.map((val) => ({
-    label: val.name.replace("Entertainment:", "").replace("Science:", ""),
+    label: val.name.replace("Entertainment: ", "").replace("Science: ", ""),
     value: val.id.toString(),
   }));
 

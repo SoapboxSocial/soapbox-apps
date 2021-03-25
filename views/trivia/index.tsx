@@ -2,12 +2,12 @@ import { useChannel, useEvent } from "@harelpls/use-pusher";
 import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
+import shuffle from "lodash.shuffle";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
 import { useParams, useSoapboxRoomId, useTriviaCategories } from "../../hooks";
 import LoadingView from "../loading";
-import shuffle from "lodash.shuffle";
 
 export type Question = {
   category: string;
@@ -18,7 +18,7 @@ export type Question = {
   type: "boolean" | "multiple";
 };
 
-const TRIVIA_SERVER_BASE_URL = "http://localhost:8080";
+const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
 export default function TriviaView() {
   const { isAppOpener } = useParams();
@@ -58,7 +58,7 @@ export default function TriviaView() {
 
     try {
       await fetch(
-        `${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/setup?category=${category}`
+        `${SERVER_BASE}/trivia/${soapboxRoomId}/setup?category=${category}`
       );
     } catch (error) {
       console.error(error);
@@ -82,7 +82,7 @@ export default function TriviaView() {
   const voteOnQuestion = (answer: string) => async () => {
     votedAnswerSet(answer);
 
-    await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/vote`, {
+    await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/vote`, {
       method: "POST",
       body: JSON.stringify({ vote: answer }),
       headers: { "Content-Type": "application/json" },
@@ -107,17 +107,23 @@ export default function TriviaView() {
       categorySet("all");
       votesSet([]);
 
-      await fetch(`${TRIVIA_SERVER_BASE_URL}/trivia/${soapboxRoomId}/reset`);
+      await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/reset`);
     });
   }, []);
 
   if (!activeQuestion && isAppOpener && categories) {
     return (
       <main className="flex flex-col min-h-screen select-none">
+        <div className="pt-4 px-4">
+          <div className="relative">
+            <h1 className="text-title2 font-bold text-center">Trivia</h1>
+          </div>
+        </div>
+
         <div className="flex-1 p-4 flex flex-col">
           <div className="flex-1">
             <label className="flex mb-2" htmlFor="category">
-              <span className="text-body">Category</span>
+              <span className="text-body">Choose a category</span>
             </label>
 
             <Select
@@ -129,7 +135,7 @@ export default function TriviaView() {
           </div>
 
           <div className="pt-4">
-            <Button onClick={init}>Start Trivia</Button>
+            <Button onClick={init}>Start a round</Button>
           </div>
         </div>
       </main>
