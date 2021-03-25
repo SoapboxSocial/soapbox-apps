@@ -109,7 +109,7 @@ export default function TriviaView() {
 
       await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/reset`);
     });
-  }, []);
+  }, [soapboxRoomId]);
 
   if (!activeQuestion && isAppOpener && categories) {
     return (
