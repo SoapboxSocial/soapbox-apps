@@ -3,6 +3,7 @@ import { onClose, User } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
 import shuffle from "lodash.shuffle";
+import type { Channel, PresenceChannel } from "pusher-js";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
@@ -164,7 +165,7 @@ export default function TriviaView() {
   if (activeQuestion)
     return (
       <main className="flex flex-col min-h-screen select-none relative">
-        <Timer />
+        <Timer channel={channel} />
 
         <div className="flex-1 px-4 flex items-center justify-center">
           <p
@@ -202,12 +203,7 @@ export default function TriviaView() {
   return <LoadingView restartCallback={isMiniClosed ? init : null} />;
 }
 
-function Timer() {
-  const soapboxRoomId = useSoapboxRoomId();
-  const channelName = `mini-trivia-${soapboxRoomId}`;
-
-  const channel = useChannel(channelName);
-
+function Timer({ channel }: { channel: Channel & PresenceChannel }) {
   const [timer, timerSet] = useState(0);
 
   useEvent(channel, "timer", (data: { timer: number }) => {
