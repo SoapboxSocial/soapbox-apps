@@ -1,12 +1,17 @@
-import { useChannel, useEvent } from "@harelpls/use-pusher";
-import { onClose } from "@soapboxsocial/minis.js";
+import { useChannel, useEvent, usePusher } from "@harelpls/use-pusher";
+import { onClose, User } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
 import shuffle from "lodash.shuffle";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
-import { useParams, useSoapboxRoomId, useTriviaCategories } from "../../hooks";
+import {
+  useParams,
+  useSession,
+  useSoapboxRoomId,
+  useTriviaCategories,
+} from "../../hooks";
 import LoadingView from "../loading";
 
 export type Question = {
@@ -18,23 +23,41 @@ export type Question = {
   type: "boolean" | "multiple";
 };
 
+export type Vote = { answer: string; user: User };
+
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
 export default function TriviaView() {
+  const user = useSession();
   const { isAppOpener } = useParams();
 
   const soapboxRoomId = useSoapboxRoomId();
-
   const channelName = `mini-trivia-${soapboxRoomId}`;
+
+  const { client } = usePusher();
   const channel = useChannel(channelName);
 
   const categories = useTriviaCategories();
 
   const [category, categorySet] = useState<string>("all");
-
   const handleSelect = (event: ChangeEvent<HTMLSelectElement>) =>
     categorySet(event.target.value);
 
+  const init = useCallback(async () => {
+    console.log("[init]");
+
+    try {
+      await fetch(
+        `${SERVER_BASE}/trivia/${soapboxRoomId}/setup?category=${category}`
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }, [category, soapboxRoomId]);
+
+  /**
+   * 'question' Event Handling
+   */
   const [activeQuestion, activeQuestionSet] = useState<Question>();
 
   useEvent(channel, "question", (data: { question: Question }) => {
@@ -53,65 +76,62 @@ export default function TriviaView() {
     return null;
   }, [activeQuestion]);
 
-  const init = useCallback(async () => {
-    console.log("[init]");
+  /**
+   * 'vote' Event Handling
+   */
+  const [votes, votesSet] = useState<Vote[]>([]);
 
-    try {
-      await fetch(
-        `${SERVER_BASE}/trivia/${soapboxRoomId}/setup?category=${category}`
-      );
-    } catch (error) {
-      console.error(error);
-    }
-  }, [category, soapboxRoomId]);
+  useEvent(channel, "vote", (data: { votes: Vote[] }) => {
+    console.log("Received 'vote' event with payload", data);
 
+    votesSet(data.votes);
+  });
+
+  /**
+   * Voting Logic
+   */
   const [votedAnswer, votedAnswerSet] = useState<string>(null);
 
   useEffect(() => {
     if (typeof votedAnswer === "string") votedAnswerSet(null);
   }, [activeQuestion]);
 
-  const [votes, votesSet] = useState<string[]>([]);
-
-  useEvent(channel, "vote", (data: { votes: string[] }) => {
-    console.log("Received 'vote' event with payload", data);
-
-    votesSet(data.votes);
-  });
-
   const voteOnQuestion = (answer: string) => async () => {
     votedAnswerSet(answer);
 
     await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/vote`, {
       method: "POST",
-      body: JSON.stringify({ vote: answer }),
+      body: JSON.stringify({ vote: { answer, user } }),
       headers: { "Content-Type": "application/json" },
     });
   };
 
   const calcVoteCount = (answer: string) =>
-    votes.filter((vote) => vote === answer).length;
+    votes.filter((vote) => vote.answer === answer).length;
 
   /**
    * Mini Cleanup
    */
-
   const [isMiniClosed, isMiniClosedSet] = useState(false);
 
   useEffect(() => {
-    onClose(async () => {
-      isMiniClosedSet(true);
+    if (soapboxRoomId) {
+      onClose(async () => {
+        isMiniClosedSet(true);
 
-      activeQuestionSet(null);
-      votedAnswerSet(null);
-      categorySet("all");
-      votesSet([]);
+        activeQuestionSet(null);
+        votedAnswerSet(null);
+        categorySet("all");
+        votesSet([]);
 
-      await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/reset`);
-    });
+        await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/reset`);
+
+        client?.disconnect();
+      });
+    }
   }, [soapboxRoomId]);
 
-  if (!activeQuestion && isAppOpener && categories) {
+  if (!activeQuestion && isAppOpener && categories)
     return (
       <main className="flex flex-col min-h-screen select-none">
         <div className="pt-4 px-4">
@@ -140,7 +160,6 @@ export default function TriviaView() {
         </div>
       </main>
     );
-  }
 
   if (activeQuestion)
     return (
@@ -167,9 +186,14 @@ export default function TriviaView() {
               disabled={votedAnswer}
               onClick={voteOnQuestion(question)}
               key={question}
-              text={question}
               voteCount={calcVoteCount(question)}
-            />
+            >
+              <span
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(question),
+                }}
+              />
+            </TriviaButton>
           ))}
         </div>
       </main>
@@ -180,7 +204,6 @@ export default function TriviaView() {
 
 function Timer() {
   const soapboxRoomId = useSoapboxRoomId();
-
   const channelName = `mini-trivia-${soapboxRoomId}`;
 
   const channel = useChannel(channelName);
@@ -205,7 +228,14 @@ function Timer() {
   );
 }
 
-function TriviaButton({ active, correct, disabled, onClick, text, voteCount }) {
+function TriviaButton({
+  active,
+  correct,
+  disabled,
+  onClick,
+  children,
+  voteCount,
+}) {
   const cachedClassNames = cn(
     "w-full rounded py-3 px-4 text-body font-semibold focus:outline-none focus:ring-4 border-2",
     disabled ? "flex justify-between" : "",
@@ -218,7 +248,7 @@ function TriviaButton({ active, correct, disabled, onClick, text, voteCount }) {
 
   return (
     <button onClick={onClick} className={cachedClassNames} disabled={disabled}>
-      <span>{text}</span>
+      {children}
 
       {disabled && <span className="text-sm">{voteCount}</span>}
     </button>
