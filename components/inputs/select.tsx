@@ -2,7 +2,10 @@ import { forwardRef, SelectHTMLAttributes } from "react";
 import { ChevronDown } from "react-feather";
 
 interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
-  options: string[];
+  options: {
+    value: any;
+    label: string;
+  }[];
 }
 
 const Select = forwardRef<HTMLSelectElement, Props>(function SelectElement(
@@ -17,8 +20,8 @@ const Select = forwardRef<HTMLSelectElement, Props>(function SelectElement(
         {...rest}
       >
         {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
