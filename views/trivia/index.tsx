@@ -240,7 +240,7 @@ export default function TriviaView() {
             <TriviaButton
               active={votedAnswer === question}
               correct={question === activeQuestion.correct_answer}
-              disabled={votedAnswer}
+              disabled={showAnswer || votedAnswer}
               key={question}
               onClick={voteOnQuestion(question)}
               reveal={showAnswer}
