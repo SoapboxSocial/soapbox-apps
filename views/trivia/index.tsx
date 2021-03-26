@@ -211,9 +211,28 @@ function Timer({ channel }: { channel: Channel & PresenceChannel }) {
   return (
     <div className="absolute top-0 right-0 left-0">
       <div
-        className="h-1 bg-soapbox"
-        style={{ width: `${(timer / DURATION) * 100}%` }}
+        className={cn("bar h-1 bg-soapbox", {
+          animate: timer < DURATION,
+        })}
       />
+      <style jsx>{`
+        .bar {
+          transform-origin: left center;
+          transform: scaleX(0);
+        }
+
+        .animate {
+          --duration: 15;
+
+          animation: roundtime calc(var(--duration) * 1s) linear forwards;
+        }
+
+        @keyframes roundtime {
+          to {
+            transform: scaleX(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }
