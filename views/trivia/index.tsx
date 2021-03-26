@@ -243,7 +243,7 @@ function TriviaButton({
       {children}
 
       {disabled && (
-        <span className="absolute transform-gpu right-6 top-1/2 -translate-y-1/2 text-sm">
+        <span className="absolute transform-gpu right-4 top-1/2 -translate-y-1/2 text-sm">
           {voteCount}
         </span>
       )}
