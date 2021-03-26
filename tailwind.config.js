@@ -21,6 +21,7 @@ module.exports = {
         systemGrey4: { light: "#d1d1d6", dark: "#3a3a3c" },
         systemGrey5: { light: "#e5e5ea", dark: "#2c2c2e" },
         systemGrey6: { light: "#f2f2f7", dark: "#1c1c1e" },
+        systemGreen: { light: "#34C759", dark: "#32D74B" },
         systemRed: { light: "#ff3b30", dark: "#ff453a" },
         label: { light: "#3c3c43", dark: "#ebebf5" },
       },
