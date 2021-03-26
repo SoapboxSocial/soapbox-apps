@@ -342,7 +342,7 @@ function TriviaButton({
     <button onClick={onClick} className={cachedClassNames} disabled={disabled}>
       {children}
 
-      {disabled && (
+      {reveal && disabled && (
         <span className="absolute transform-gpu right-4 top-1/2 -translate-y-1/2 text-sm">
           {voteCount}
         </span>
