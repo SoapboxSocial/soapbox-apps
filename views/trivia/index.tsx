@@ -245,11 +245,15 @@ function TriviaButton({
 }) {
   const cachedClassNames = cn(
     "w-full rounded py-3 px-6 text-sm font-semibold focus:outline-none focus:ring-4 border-2 relative",
-    reveal &&
-      (correct
-        ? "text-white border-systemGreen-light bg-systemGreen-light"
-        : "text-white border-systemRed-light bg-systemRed-light"),
-    active ? "border-soapbox bg-soapbox" : "border-systemGrey4-light"
+    active
+      ? "text-white border-soapbox bg-soapbox"
+      : "border-systemGrey4-light",
+    {
+      "text-white border-systemGreen-light bg-systemGreen-light":
+        reveal & correct,
+      "text-white border-systemRed-light bg-systemRed-light":
+        active && reveal && !correct,
+    }
   );
 
   return (
