@@ -83,7 +83,12 @@ const getTriviaCategories = async () => {
 };
 
 export function useTriviaCategories() {
-  const { data } = useSWR("TriviaCategories", getTriviaCategories);
+  const { data } = useSWR("TriviaCategories", getTriviaCategories, {
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
   return data;
 }
