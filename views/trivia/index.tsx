@@ -135,12 +135,6 @@ export default function TriviaView() {
   if (!activeQuestion && isAppOpener && categories)
     return (
       <main className="flex flex-col min-h-screen select-none">
-        <div className="pt-4 px-4">
-          <div className="relative">
-            <h1 className="text-title2 font-bold text-center">Trivia</h1>
-          </div>
-        </div>
-
         <div className="flex-1 p-4 flex flex-col">
           <div className="flex-1">
             <label className="flex mb-2" htmlFor="category">
