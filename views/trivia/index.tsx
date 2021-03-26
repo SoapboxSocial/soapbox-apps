@@ -227,8 +227,7 @@ function TriviaButton({
   voteCount,
 }) {
   const cachedClassNames = cn(
-    "w-full rounded py-3 px-4 text-body font-semibold focus:outline-none focus:ring-4 border-2",
-    disabled ? "flex justify-between" : "",
+    "w-full rounded py-3 px-6 text-sm font-semibold focus:outline-none focus:ring-4 border-2 relative",
     active
       ? correct
         ? "bg-accent-green border-accent-green text-black"
@@ -240,7 +239,11 @@ function TriviaButton({
     <button onClick={onClick} className={cachedClassNames} disabled={disabled}>
       {children}
 
-      {disabled && <span className="text-sm">{voteCount}</span>}
+      {disabled && (
+        <span className="absolute transform-gpu right-6 top-1/2 -translate-y-1/2 text-sm">
+          {voteCount}
+        </span>
+      )}
     </button>
   );
 }
