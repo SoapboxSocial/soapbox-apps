@@ -104,6 +104,18 @@ export default function TriviaView() {
   }, [activeQuestion]);
 
   /**
+   * 'scores' Event Handling
+   */
+
+  const [scores, scoresSet] = useState<{ [key: string]: number }>();
+
+  useEvent(channel, "scores", (data: { scores: { [key: string]: number } }) => {
+    console.log("Received 'scores' event with payload", data);
+
+    scoresSet(data.scores);
+  });
+
+  /**
    * Voting Logic
    */
   const [votedAnswer, votedAnswerSet] = useState<string>(null);
@@ -136,8 +148,10 @@ export default function TriviaView() {
         isMiniClosedSet(true);
 
         activeQuestionSet(null);
-        votedAnswerSet(null);
         categorySet("all");
+        scoresSet(null);
+        showAnswerSet(false);
+        votedAnswerSet(null);
         votesSet([]);
 
         await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/reset`);
@@ -147,7 +161,40 @@ export default function TriviaView() {
     }
   }, [soapboxRoomId]);
 
-  if (!activeQuestion && isAppOpener && categories)
+  if (!activeQuestion && isAppOpener && categories) {
+    if (scores)
+      return (
+        <main className="flex flex-col min-h-screen select-none relative">
+          <div className="pt-4 px-4">
+            <h1 className="text-title2 font-bold text-center">Scoreboard</h1>
+          </div>
+
+          <div className="flex-1 px-4 pt-4">
+            <ul className="text-xl space-y-4">
+              <li className="flex font-bold">
+                <div className="w-20">Rank</div>
+                <div className="flex-1">Player</div>
+                <div className="flex-1 text-center">Score</div>
+              </li>
+
+              {Object.keys(scores).map((id, i) => (
+                <li key={id} className="flex">
+                  <div className="w-20">{`#${i + 1}`}</div>
+                  <div className="flex-1 min-w-0">
+                    <span className="truncate">{id}</span>
+                  </div>
+                  <div className="flex-1 text-center">{scores[id]}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="p-4">
+            <Button onClick={() => scoresSet(null)}>New game</Button>
+          </div>
+        </main>
+      );
+
     return (
       <main className="flex flex-col min-h-screen select-none">
         <div className="flex-1 p-4 flex flex-col">
@@ -170,6 +217,7 @@ export default function TriviaView() {
         </div>
       </main>
     );
+  }
 
   if (activeQuestion)
     return (
@@ -203,6 +251,35 @@ export default function TriviaView() {
               />
             </TriviaButton>
           ))}
+        </div>
+      </main>
+    );
+
+  if (scores)
+    return (
+      <main className="flex flex-col min-h-screen select-none relative">
+        <div className="pt-4 px-4">
+          <h1 className="text-title2 font-bold text-center">Scoreboard</h1>
+        </div>
+
+        <div className="flex-1 p-4">
+          <ul className="text-xl space-y-4">
+            <li className="flex font-bold">
+              <div className="w-20">Rank</div>
+              <div className="flex-1">Player</div>
+              <div className="flex-1 text-center">Score</div>
+            </li>
+
+            {Object.keys(scores).map((id, i) => (
+              <li key={id} className="flex">
+                <div className="w-20">{`#${i + 1}`}</div>
+                <div className="flex-1 min-w-0">
+                  <span className="truncate">{id}</span>
+                </div>
+                <div className="flex-1 text-center">{scores[id]}</div>
+              </li>
+            ))}
+          </ul>
         </div>
       </main>
     );
