@@ -106,7 +106,6 @@ export default function TriviaView() {
   /**
    * 'scores' Event Handling
    */
-
   const [scores, scoresSet] = useState<{ [key: string]: number }>();
 
   useEvent(channel, "scores", (data: { scores: { [key: string]: number } }) => {
@@ -190,7 +189,7 @@ export default function TriviaView() {
           </div>
 
           <div className="p-4">
-            <Button onClick={() => scoresSet(null)}>New game</Button>
+            <Button onClick={() => scoresSet(null)}>New round</Button>
           </div>
         </main>
       );
@@ -296,7 +295,7 @@ function Timer({ channel }: { channel: Channel & PresenceChannel }) {
     timerSet(data.timer);
   });
 
-  const DURATION = 15;
+  const DURATION = 10;
 
   return (
     <div className="absolute top-0 right-0 left-0">
