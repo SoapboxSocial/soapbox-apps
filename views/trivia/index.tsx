@@ -89,6 +89,21 @@ export default function TriviaView() {
   });
 
   /**
+   * 'reveal' Event Handling
+   */
+  const [showAnswer, showAnswerSet] = useState(false);
+
+  useEvent(channel, "reveal", () => {
+    console.log("Received 'reveal' event");
+
+    showAnswerSet(true);
+  });
+
+  useEffect(() => {
+    showAnswerSet(false);
+  }, [activeQuestion]);
+
+  /**
    * Voting Logic
    */
   const [votedAnswer, votedAnswerSet] = useState<string>(null);
@@ -174,13 +189,11 @@ export default function TriviaView() {
           {questions.map((question) => (
             <TriviaButton
               active={votedAnswer === question}
-              correct={
-                votedAnswer === question &&
-                votedAnswer === activeQuestion.correct_answer
-              }
+              correct={question === activeQuestion.correct_answer}
               disabled={votedAnswer}
-              onClick={voteOnQuestion(question)}
               key={question}
+              onClick={voteOnQuestion(question)}
+              reveal={showAnswer}
               voteCount={calcVoteCount(question)}
             >
               <span
@@ -223,19 +236,20 @@ function Timer({ channel }: { channel: Channel & PresenceChannel }) {
 
 function TriviaButton({
   active,
+  children,
   correct,
   disabled,
   onClick,
-  children,
+  reveal,
   voteCount,
 }) {
   const cachedClassNames = cn(
     "w-full rounded py-3 px-6 text-sm font-semibold focus:outline-none focus:ring-4 border-2 relative",
-    active
-      ? correct
-        ? "bg-accent-green border-accent-green text-black"
-        : "bg-soapbox border-soapbox text-white"
-      : "border-systemGrey4-light dark:border-systemGrey4-dark"
+    reveal &&
+      (correct
+        ? "text-white border-systemGreen-light bg-systemGreen-light"
+        : "text-white border-systemRed-light bg-systemRed-light"),
+    active ? "border-soapbox bg-soapbox" : "border-systemGrey4-light"
   );
 
   return (
