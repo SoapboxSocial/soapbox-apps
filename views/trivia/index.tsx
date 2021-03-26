@@ -211,28 +211,12 @@ function Timer({ channel }: { channel: Channel & PresenceChannel }) {
   return (
     <div className="absolute top-0 right-0 left-0">
       <div
-        className={cn("bar h-1 bg-soapbox", {
-          animate: timer < DURATION,
-        })}
+        className="h-1 bg-soapbox origin-left transition-transform ease-linear "
+        style={{
+          transform: `scaleX(${timer / DURATION})`,
+          transitionDuration: "999ms",
+        }}
       />
-      <style jsx>{`
-        .bar {
-          transform-origin: left center;
-          transform: scaleX(0);
-        }
-
-        .animate {
-          --duration: 15;
-
-          animation: roundtime calc(var(--duration) * 1s) linear forwards;
-        }
-
-        @keyframes roundtime {
-          to {
-            transform: scaleX(1);
-          }
-        }
-      `}</style>
     </div>
   );
 }
