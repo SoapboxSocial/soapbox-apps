@@ -176,15 +176,18 @@ export default function TriviaView() {
                 <div className="flex-1 text-center">Score</div>
               </li>
 
-              {Object.keys(scores).map((id, i) => (
-                <li key={id} className="flex">
-                  <div className="w-20">{`#${i + 1}`}</div>
-                  <div className="flex-1 min-w-0">
-                    <span className="truncate">{id}</span>
-                  </div>
-                  <div className="flex-1 text-center">{scores[id]}</div>
-                </li>
-              ))}
+              {Object.entries(scores)
+                .map(([display_name, score]) => ({ display_name, score }))
+                .sort((a, b) => b.score - a.score)
+                .map((el, i) => (
+                  <li key={el.display_name} className="flex">
+                    <div className="w-20">{`#${i + 1}`}</div>
+                    <div className="flex-1 min-w-0">
+                      <span className="truncate">{el.display_name}</span>
+                    </div>
+                    <div className="flex-1 text-center">{el.score}</div>
+                  </li>
+                ))}
             </ul>
           </div>
 
@@ -269,15 +272,18 @@ export default function TriviaView() {
               <div className="flex-1 text-center">Score</div>
             </li>
 
-            {Object.keys(scores).map((id, i) => (
-              <li key={id} className="flex">
-                <div className="w-20">{`#${i + 1}`}</div>
-                <div className="flex-1 min-w-0">
-                  <span className="truncate">{id}</span>
-                </div>
-                <div className="flex-1 text-center">{scores[id]}</div>
-              </li>
-            ))}
+            {Object.entries(scores)
+              .map(([display_name, score]) => ({ display_name, score }))
+              .sort((a, b) => b.score - a.score)
+              .map((el, i) => (
+                <li key={el.display_name} className="flex">
+                  <div className="w-20">{`#${i + 1}`}</div>
+                  <div className="flex-1 min-w-0">
+                    <span className="truncate">{el.display_name}</span>
+                  </div>
+                  <div className="flex-1 text-center">{el.score}</div>
+                </li>
+              ))}
           </ul>
         </div>
       </main>
