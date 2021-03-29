@@ -79,10 +79,6 @@ export default function RandomView() {
 
   return (
     <main className="relative grid place-items-center min-h-screen">
-      <div className="absolute top-4">
-        <h1 className="text-title2 font-bold text-center">Random Person</h1>
-      </div>
-
       {isAppOpener && (
         <div className="absolute top-4 right-4">
           <CircleIconButton
