@@ -1,5 +1,5 @@
 import { useChannel, useEvent, usePusher } from "@harelpls/use-pusher";
-import { onClose, User } from "@soapboxsocial/minis.js";
+import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
 import shuffle from "lodash.shuffle";
@@ -14,17 +14,7 @@ import {
   useTriviaCategories,
 } from "../../hooks";
 import LoadingView from "../loading";
-
-export type Question = {
-  category: string;
-  correct_answer: string;
-  difficulty: "easy" | "medium" | "hard";
-  incorrect_answers: string[];
-  question: string;
-  type: "boolean" | "multiple";
-};
-
-export type Vote = { answer: string; user: User };
+import type { Question, Vote, DifficultyOptions } from "./types";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
@@ -41,20 +31,24 @@ export default function TriviaView() {
   const categories = useTriviaCategories();
 
   const [category, categorySet] = useState<string>("all");
-  const handleSelect = (event: ChangeEvent<HTMLSelectElement>) =>
+  const handleCategorySelect = (event: ChangeEvent<HTMLSelectElement>) =>
     categorySet(event.target.value);
+
+  const [difficulty, difficultySet] = useState<DifficultyOptions>("any");
+  const handleDifficultySelect = (event: ChangeEvent<HTMLSelectElement>) =>
+    difficultySet(event.target.value as DifficultyOptions);
 
   const init = useCallback(async () => {
     console.log("[init]");
 
     try {
       await fetch(
-        `${SERVER_BASE}/trivia/${soapboxRoomId}/setup?category=${category}`
+        `${SERVER_BASE}/trivia/${soapboxRoomId}/setup?category=${category}&difficulty=${difficulty}`
       );
     } catch (error) {
       console.error(error);
     }
-  }, [category, soapboxRoomId]);
+  }, [category, difficulty, soapboxRoomId]);
 
   /**
    * 'question' Event Handling
@@ -200,17 +194,37 @@ export default function TriviaView() {
     return (
       <main className="flex flex-col min-h-screen select-none">
         <div className="flex-1 p-4 flex flex-col">
-          <div className="flex-1">
-            <label className="flex mb-2" htmlFor="category">
-              <span className="text-body">Choose a category</span>
-            </label>
+          <div className="flex-1 space-y-4">
+            <div>
+              <label className="flex mb-2" htmlFor="category">
+                <span className="text-body">Choose a category</span>
+              </label>
 
-            <Select
-              id="category"
-              onChange={handleSelect}
-              value={category}
-              options={[{ label: "All", value: "all" }, ...categories]}
-            />
+              <Select
+                id="category"
+                onChange={handleCategorySelect}
+                value={category}
+                options={[{ label: "All", value: "all" }, ...categories]}
+              />
+            </div>
+
+            <div>
+              <label className="flex mb-2" htmlFor="category">
+                <span className="text-body">Select difficulty</span>
+              </label>
+
+              <Select
+                id="difficulty"
+                onChange={handleDifficultySelect}
+                value={difficulty}
+                options={[
+                  { label: "Any", value: "any" },
+                  { label: "Easy", value: "easy" },
+                  { label: "Medium", value: "medium" },
+                  { label: "Hard", value: "hard" },
+                ]}
+              />
+            </div>
           </div>
 
           <div className="pt-4">
