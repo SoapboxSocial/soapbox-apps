@@ -1,10 +1,6 @@
-import { PusherProvider, PusherProviderProps } from "@harelpls/use-pusher";
+import { PusherProvider } from "@harelpls/use-pusher";
+import { config } from "../../lib/pusher";
 import TriviaView from "../../views/trivia";
-
-const config: PusherProviderProps = {
-  clientKey: process.env.NEXT_PUBLIC_PUSHER_CLIENT_KEY,
-  cluster: "eu",
-};
 
 export default function Trivia() {
   return (
