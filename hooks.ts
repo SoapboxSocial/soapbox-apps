@@ -28,7 +28,7 @@ export function useSession() {
 export function useSoapboxRoomId() {
   const { query } = useRouter();
 
-  return query?.roomID || null;
+  return (query?.roomID as string) || null;
 }
 
 export function useParams() {
