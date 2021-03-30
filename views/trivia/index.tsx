@@ -136,7 +136,7 @@ export default function TriviaView() {
   const [isMiniClosed, isMiniClosedSet] = useState(false);
 
   useEffect(() => {
-    if (soapboxRoomId) {
+    if (soapboxRoomId && isAppOpener) {
       onClose(async () => {
         isMiniClosedSet(true);
 
@@ -152,7 +152,7 @@ export default function TriviaView() {
         client?.disconnect();
       });
     }
-  }, [soapboxRoomId]);
+  }, [soapboxRoomId, isAppOpener]);
 
   if (!activeQuestion && isAppOpener && categories) {
     if (scores)
