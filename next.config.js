@@ -4,6 +4,7 @@ module.exports = {
       {
         source: "/birds",
         destination: "https://birds-tazyr.ondigitalocean.app/birds",
+        basePath: false,
       },
     ];
   },
