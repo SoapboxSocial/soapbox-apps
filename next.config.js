@@ -1,10 +1,10 @@
 module.exports = {
-  async rewrites() {
+  async redirects() {
     return [
       {
         source: "/birds",
         destination: "https://birds-tazyr.ondigitalocean.app/birds",
-        basePath: false,
+        permanent: false,
       },
     ];
   },
