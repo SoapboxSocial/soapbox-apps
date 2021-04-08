@@ -2,9 +2,11 @@ import { useChannel, useEvent, usePusher } from "@harelpls/use-pusher";
 import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
+import { motion } from "framer-motion";
 import shuffle from "lodash.shuffle";
 import type { Channel, PresenceChannel } from "pusher-js";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useInterval, useWindowSize } from "react-use";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
 import {
@@ -100,13 +102,19 @@ export default function TriviaView() {
   /**
    * 'scores' Event Handling
    */
-  const [scores, scoresSet] = useState<{ [key: string]: number }>();
+  const [scores, scoresSet] = useState<
+    { display_name: string; score: number }[]
+  >();
 
-  useEvent(channel, "scores", (data: { scores: { [key: string]: number } }) => {
-    console.log("Received 'scores' event with payload", data);
+  useEvent(
+    channel,
+    "scores",
+    (data: { scores: { display_name: string; score: number }[] }) => {
+      console.log("Received 'scores' event with payload", data);
 
-    scoresSet(data.scores);
-  });
+      scoresSet(data.scores);
+    }
+  );
 
   /**
    * Voting Logic
@@ -170,18 +178,15 @@ export default function TriviaView() {
                 <div className="flex-1 text-center">Score</div>
               </li>
 
-              {Object.entries(scores)
-                .map(([display_name, score]) => ({ display_name, score }))
-                .sort((a, b) => b.score - a.score)
-                .map((el, i) => (
-                  <li key={el.display_name} className="flex">
-                    <div className="w-20">{`#${i + 1}`}</div>
-                    <div className="flex-1 min-w-0">
-                      <span className="truncate">{el.display_name}</span>
-                    </div>
-                    <div className="flex-1 text-center">{el.score}</div>
-                  </li>
-                ))}
+              {scores.map((el, i) => (
+                <li key={el.display_name} className="flex">
+                  <div className="w-20">{`#${i + 1}`}</div>
+                  <div className="flex-1 min-w-0">
+                    <span className="truncate">{el.display_name}</span>
+                  </div>
+                  <div className="flex-1 text-center">{el.score}</div>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -238,7 +243,7 @@ export default function TriviaView() {
   if (activeQuestion)
     return (
       <main className="flex flex-col min-h-screen select-none relative">
-        <Timer channel={channel} />
+        <Timer key={activeQuestion.question} />
 
         <div className="flex-1 px-4 flex items-center justify-center">
           <p
@@ -286,18 +291,15 @@ export default function TriviaView() {
               <div className="flex-1 text-center">Score</div>
             </li>
 
-            {Object.entries(scores)
-              .map(([display_name, score]) => ({ display_name, score }))
-              .sort((a, b) => b.score - a.score)
-              .map((el, i) => (
-                <li key={el.display_name} className="flex">
-                  <div className="w-20">{`#${i + 1}`}</div>
-                  <div className="flex-1 min-w-0">
-                    <span className="truncate">{el.display_name}</span>
-                  </div>
-                  <div className="flex-1 text-center">{el.score}</div>
-                </li>
-              ))}
+            {scores.map((el, i) => (
+              <li key={el.display_name} className="flex">
+                <div className="w-20">{`#${i + 1}`}</div>
+                <div className="flex-1 min-w-0">
+                  <span className="truncate">{el.display_name}</span>
+                </div>
+                <div className="flex-1 text-center">{el.score}</div>
+              </li>
+            ))}
           </ul>
         </div>
       </main>
@@ -306,25 +308,15 @@ export default function TriviaView() {
   return <LoadingView restartCallback={isMiniClosed ? init : null} />;
 }
 
-function Timer({ channel }: { channel: Channel & PresenceChannel }) {
-  const [timer, timerSet] = useState(0);
-
-  useEvent(channel, "timer", (data: { timer: number }) => {
-    console.log("Received 'timer' event with payload", data);
-
-    timerSet(data.timer);
-  });
-
-  const DURATION = 10;
+function Timer() {
+  const { width: screenMaxWidth } = useWindowSize();
 
   return (
     <div className="absolute top-0 right-0 left-0">
-      <div
-        className="h-1 bg-soapbox origin-left transition-transform ease-linear "
-        style={{
-          transform: `scaleX(${timer / DURATION})`,
-          transitionDuration: "999ms",
-        }}
+      <motion.div
+        animate={{ width: screenMaxWidth }}
+        transition={{ from: 0, type: "tween", ease: "linear", duration: 10 }}
+        className="h-1 bg-soapbox"
       />
     </div>
   );
