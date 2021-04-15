@@ -10,10 +10,10 @@ import {
 import { RefreshCw, Trash2 } from "react-feather";
 import io, { Socket } from "socket.io-client";
 import title from "title";
-import Input from "../../components/inputs/input";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
 import obfuscateWord from "../../lib/obfuscateWord";
+import LoadingView from "../loading";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
@@ -63,10 +63,10 @@ export default function DrawView() {
   const socket = useSocket();
 
   const [options, optionsSet] = useState<string[]>();
-  const handleOptions = useCallback(
-    ({ words }: { words: string[] }) => optionsSet(words),
-    []
-  );
+  const handleOptions = useCallback((data: { words: string[] }) => {
+    console.log("[WORDS]", data);
+    optionsSet(data.words);
+  }, []);
 
   const [rerolls, rerollsSet] = useState(0);
   const canRerollOptions = rerolls < 3;
@@ -76,10 +76,19 @@ export default function DrawView() {
   }, [socket]);
 
   const [word, wordSet] = useState<string>();
-  const handleWord = useCallback(
-    ({ word }: { word: string }) => wordSet(word),
-    []
-  );
+  const handleWord = useCallback((data: { word: string }) => {
+    console.log("[SEND_WORD]", data);
+
+    if (typeof data.word === "string") {
+      wordSet(title(data.word));
+
+      return;
+    }
+
+    wordSet(undefined);
+  }, []);
+
+  const obfuscatedWord = useMemo(() => obfuscateWord(word), [word]);
 
   const sendSelectedOption = useCallback(
     (word: string) => () => {
@@ -89,8 +98,8 @@ export default function DrawView() {
   );
 
   const [input, inputSet] = useState<string>();
-  const onChange = ({ currentTarget }: ChangeEvent<HTMLInputElement>) =>
-    inputSet(currentTarget.value);
+  const onChange = ({ target }: ChangeEvent<HTMLInputElement>) =>
+    inputSet(target.value);
 
   const sendGuess = () => {
     if (typeof input === "undefined") {
@@ -100,20 +109,20 @@ export default function DrawView() {
     socket.emit("GUESS_WORD", { guess: input });
   };
 
+  const [isPainter, isPainterSet] = useState<boolean>(false);
+
   const [painter, painterSet] = useState<{ id: string; user: User }>();
-  const handlePainter = useCallback(({ id, user }) => {
-    console.log("NEW_PAINTER", id, user);
 
-    painterSet({ id, user });
-  }, []);
+  const handlePainter = useCallback(
+    (data: { id: string; user: User }) => {
+      console.log("[NEW_PAINTER]", data);
 
-  const isPainter = useMemo(() => {
-    if (typeof painter?.id === "string" && typeof socket?.id === "string") {
-      return isEqual(painter.id, socket.id);
-    }
+      if (isEqual(data.id, socket.id)) isPainterSet(true);
 
-    return false;
-  }, [socket, painter]);
+      painterSet(data);
+    },
+    [socket]
+  );
 
   useEffect(() => {
     if (!socket || !user) {
@@ -135,87 +144,141 @@ export default function DrawView() {
     };
   }, [user, socket]);
 
-  if (isPainter) {
-    if (typeof word === "undefined")
+  /**
+   * Game Has A Painter And We're It
+   */
+  if (!!painter && isPainter) {
+    /**
+     * We're Drawing A Word
+     */
+    if (typeof word === "string")
       return (
         <main className="flex flex-col min-h-screen select-none relative">
-          <div className="pt-4 px-4">
-            <h1 className="text-title2 font-bold text-center">
-              Draw With Friends
-            </h1>
-
-            <div className="h-2" />
-
-            <p className="text-body text-center">Choose a word to draw</p>
+          <div className="p-4">
+            <p className="text-center text-body font-bold capitalize">
+              {title(word)}
+            </p>
           </div>
 
-          <div className="flex-1 px-4 pt-4">
-            <ul className="space-y-4">
-              {options?.map((word) => (
-                <li key={word}>
-                  <button
-                    className="w-full bg-white dark:bg-systemGrey6-dark rounded-large text-center focus:outline-none focus:ring-4 py-6 text-title3 font-bold"
-                    onClick={sendSelectedOption(word)}
-                  >
-                    {title(word)}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
 
-            <div className="h-4" />
-
-            <div className="flex justify-center">
-              {canRerollOptions && (
-                <button
-                  className="w-12 h-12 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
-                  type="button"
-                  onClick={rerollOptions}
-                >
-                  <RefreshCw />
+          <div className="p-4">
+            <div className="flex space-x-4">
+              <div className="flex-1 flex space-x-2">
+                <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
+                  <div className="h-2 w-2 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
                 </button>
-              )}
+
+                <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
+                  <div className="h-4 w-4 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
+                </button>
+
+                <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
+                  <div className="h-6 w-6 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
+                </button>
+              </div>
+
+              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-systemRed-light dark:text-systemRed-dark text-body font-bold focus:outline-none focus:ring-4">
+                <Trash2 />
+              </button>
             </div>
           </div>
         </main>
       );
 
+    /**
+     * We're Selecting A Word
+     */
     return (
       <main className="flex flex-col min-h-screen select-none relative">
-        <div className="p-4">
-          <p className="text-center text-body font-bold capitalize">
-            {title(word)}
-          </p>
+        <div className="pt-4 px-4">
+          <h1 className="text-title2 font-bold text-center">
+            Draw With Friends
+          </h1>
+
+          <div className="h-2" />
+
+          <p className="text-body text-center">Choose a word to draw</p>
         </div>
 
-        <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
+        <div className="flex-1 px-4 pt-4">
+          <ul className="space-y-4">
+            {options?.map((option) => (
+              <li key={option}>
+                <button
+                  className="w-full bg-white dark:bg-systemGrey6-dark rounded text-center focus:outline-none focus:ring-4 py-3 text-title3 font-bold"
+                  onClick={sendSelectedOption(option)}
+                >
+                  {title(option)}
+                </button>
+              </li>
+            ))}
+          </ul>
 
-        <div className="p-4">
-          <div className="flex space-x-4">
-            <div className="flex-1 flex space-x-2">
-              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
-                <div className="h-2 w-2 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
+          <div className="h-4" />
+
+          <div className="flex justify-center">
+            {canRerollOptions && (
+              <button
+                className="w-12 h-12 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
+                type="button"
+                onClick={rerollOptions}
+              >
+                <RefreshCw />
               </button>
-
-              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
-                <div className="h-4 w-4 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
-              </button>
-
-              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
-                <div className="h-6 w-6 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
-              </button>
-            </div>
-
-            <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-systemRed-light dark:text-systemRed-dark text-body font-bold focus:outline-none focus:ring-4">
-              <Trash2 />
-            </button>
+            )}
           </div>
         </div>
       </main>
     );
   }
 
-  if (typeof painter !== "undefined" && typeof word === "undefined") {
+  /**
+   * Game Has A Painter, And We're Not It Right Now
+   */
+  if (!!painter && !isPainter) {
+    /**
+     * Word Selected, We're Guessing The Word Now
+     */
+    if (typeof word === "string")
+      return (
+        <main className="flex flex-col min-h-screen select-none relative">
+          <div className="p-4">
+            <p
+              className="text-center text-body font-bold capitalize"
+              style={{ letterSpacing: "0.25em" }}
+            >
+              {obfuscatedWord}
+            </p>
+          </div>
+
+          <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
+
+          <div className="p-4">
+            <div className="flex space-x-2">
+              <input
+                className="py-3 px-4 w-full rounded bg-white dark:bg-systemGrey6-dark focus:outline-none focus:ring-4"
+                value={input}
+                placeholder="Type your guess..."
+                onChange={onChange}
+                type="text"
+              />
+
+              <button
+                type="button"
+                className="py-3 px-4 rounded bg-soapbox text-white text-body font-bold focus:outline-none focus:ring-4"
+                onClick={sendGuess}
+              >
+                Guess
+              </button>
+            </div>
+          </div>
+        </main>
+      );
+
+    /**
+     * Waiting For Word To Be Selected
+     */
     return (
       <main className="flex flex-col min-h-screen select-none relative">
         <div className="flex items-center justify-center flex-1 pt-4 px-4">
@@ -227,37 +290,5 @@ export default function DrawView() {
     );
   }
 
-  return (
-    <main className="flex flex-col min-h-screen select-none relative">
-      <div className="p-4">
-        <p
-          className="text-center text-body font-bold capitalize"
-          style={{ letterSpacing: "0.25em" }}
-        >
-          {obfuscateWord(word)}
-        </p>
-      </div>
-
-      <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
-
-      <div className="p-4">
-        <div className="flex space-x-2">
-          <Input
-            className="py-3 px-4 w-full rounded bg-white dark:bg-systemGrey6-dark focus:outline-none focus:ring-4"
-            value={input}
-            placeholder="Type your guess..."
-            onChange={onChange}
-            type="text"
-          />
-
-          <button
-            className="py-3 px-4 rounded bg-soapbox text-white text-body font-bold focus:outline-none focus:ring-4"
-            onClick={sendGuess}
-          >
-            Guess
-          </button>
-        </div>
-      </div>
-    </main>
-  );
+  return <LoadingView />;
 }
