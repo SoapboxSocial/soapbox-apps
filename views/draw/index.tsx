@@ -10,6 +10,9 @@ import {
 import { Clock, RefreshCw, Trash2 } from "react-feather";
 import io, { Socket } from "socket.io-client";
 import title from "title";
+import Canvas, { DrawOperation } from "../../components/draw/canvas";
+import CanvasToolbar from "../../components/draw/canvasToolbar";
+import GuessToolbar from "../../components/draw/guessToolbar";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
 import obfuscateWord from "../../lib/obfuscateWord";
@@ -19,27 +22,23 @@ const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
 const ROUND_DURATION = 80;
 
-export function Canvas() {
-  return (
-    <div>
-      <canvas></canvas>
-    </div>
-  );
-}
-
-interface DrawListenEvents {
-  WORDS: ({ words }: { words: string[] }) => void;
-  SEND_WORD: ({ word }: { word: string }) => void;
+export interface DrawListenEvents {
+  DRAW_OPERATION: (drawOperation: DrawOperation) => void;
   NEW_PAINTER: ({ id, user }: { id: string; user: User }) => void;
+  OLD_DRAW_OPERATIONS: (oldDrawOperations: DrawOperation[]) => void;
+  SEND_WORD: ({ word }: { word?: string }) => void;
   TIME: (timeLeft: number) => void;
+  WORDS: ({ words }: { words: string[] }) => void;
 }
 
-interface DrawEmitEvents {
-  JOIN_GAME: ({ user }: { user: User }) => void;
+export interface DrawEmitEvents {
+  CLEAR_CANVAS: () => void;
   CLOSE_GAME: () => void;
+  DRAW_OPERATION: (drawOperation: DrawOperation) => void;
+  GUESS_WORD: ({ guess }: { guess: string }) => void;
+  JOIN_GAME: ({ user }: { user: User }) => void;
   REROLL_WORDS: () => void;
   SELECT_WORD: ({ word }: { word: string }) => void;
-  GUESS_WORD: ({ guess }: { guess: string }) => void;
 }
 
 function useSocket() {
@@ -106,18 +105,8 @@ export default function DrawView() {
     [socket]
   );
 
-  const [input, inputSet] = useState<string>();
-  const onChange = ({ target }: ChangeEvent<HTMLInputElement>) =>
-    inputSet(target.value);
-
-  const sendGuess = () => {
-    if (typeof input === "undefined") {
-      return;
-    }
-
+  const sendGuess = (input: string) => {
     socket.emit("GUESS_WORD", { guess: input });
-
-    inputSet("");
   };
 
   const [isPainter, isPainterSet] = useState<boolean>(false);
@@ -139,6 +128,36 @@ export default function DrawView() {
 
   const handleTimer = useCallback((timeLeft: number) => timerSet(timeLeft), []);
 
+  const [drawOperation, drawOperationSet] = useState<DrawOperation>();
+  const handleDrawOperation = useCallback((data: DrawOperation) => {
+    drawOperationSet(data);
+  }, []);
+
+  const [oldDrawOperations, oldDrawOperationsSet] = useState<DrawOperation[]>(
+    []
+  );
+  const handleOldDrawOperations = useCallback((data: DrawOperation[]) => {
+    console.log("OLD_DRAW_OPERATIONS", data);
+    oldDrawOperationsSet(data);
+  }, []);
+
+  const [brushSize, brushSizeSet] = useState<"S" | "M" | "L">("M");
+
+  const handleCanvasOnChange = useCallback(
+    (drawOperation: DrawOperation) => {
+      if (typeof drawOperation === "undefined") {
+        return;
+      }
+
+      socket.emit("DRAW_OPERATION", drawOperation);
+    },
+    [socket]
+  );
+
+  const handleClearCanvas = useCallback(() => {
+    socket.emit("CLEAR_CANVAS");
+  }, [socket]);
+
   useEffect(() => {
     if (!socket || !user) {
       return;
@@ -150,12 +169,16 @@ export default function DrawView() {
     socket.on("SEND_WORD", handleWord);
     socket.on("NEW_PAINTER", handlePainter);
     socket.on("TIME", handleTimer);
+    socket.on("DRAW_OPERATION", handleDrawOperation);
+    socket.on("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
 
     return () => {
       socket.off("WORDS", handleOptions);
       socket.off("SEND_WORD", handleWord);
       socket.off("NEW_PAINTER", handlePainter);
       socket.off("TIME", handleTimer);
+      socket.off("DRAW_OPERATION", handleDrawOperation);
+      socket.off("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
 
       socket.disconnect();
     };
@@ -187,29 +210,20 @@ export default function DrawView() {
             </div>
           </div>
 
-          <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
+          <Canvas
+            brushSize={brushSize}
+            canvasTimestamp={0}
+            color="#000000"
+            drawOperation={drawOperation}
+            oldDrawOperations={oldDrawOperations}
+            onChange={handleCanvasOnChange}
+          />
 
-          <div className="p-4">
-            <div className="flex space-x-4">
-              <div className="flex-1 flex space-x-2">
-                <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
-                  <div className="h-2 w-2 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
-                </button>
-
-                <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
-                  <div className="h-4 w-4 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
-                </button>
-
-                <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
-                  <div className="h-6 w-6 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
-                </button>
-              </div>
-
-              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-systemRed-light dark:text-systemRed-dark text-body font-bold focus:outline-none focus:ring-4">
-                <Trash2 />
-              </button>
-            </div>
-          </div>
+          <CanvasToolbar
+            brushSize={brushSize}
+            brushSizeSet={brushSizeSet}
+            handleClearCanvas={handleClearCanvas}
+          />
         </main>
       );
 
@@ -289,27 +303,17 @@ export default function DrawView() {
             </div>
           </div>
 
-          <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
+          <Canvas
+            brushSize={brushSize}
+            canvasTimestamp={0}
+            color="#000000"
+            disabled
+            drawOperation={drawOperation}
+            oldDrawOperations={oldDrawOperations}
+            onChange={handleCanvasOnChange}
+          />
 
-          <div className="p-4">
-            <div className="flex space-x-2">
-              <input
-                className="py-3 px-4 w-full rounded bg-white dark:bg-systemGrey6-dark focus:outline-none focus:ring-4"
-                value={input}
-                placeholder="Type your guess..."
-                onChange={onChange}
-                type="text"
-              />
-
-              <button
-                type="button"
-                className="py-3 px-4 rounded bg-soapbox text-white text-body font-bold focus:outline-none focus:ring-4"
-                onClick={sendGuess}
-              >
-                Guess
-              </button>
-            </div>
-          </div>
+          <GuessToolbar sendGuess={sendGuess} />
         </main>
       );
 
