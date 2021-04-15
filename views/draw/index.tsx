@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { RefreshCw, Trash2 } from "react-feather";
+import { Clock, RefreshCw, Trash2 } from "react-feather";
 import io, { Socket } from "socket.io-client";
 import title from "title";
 import { useSession, useSoapboxRoomId } from "../../hooks";
@@ -16,6 +16,8 @@ import obfuscateWord from "../../lib/obfuscateWord";
 import LoadingView from "../loading";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
+
+const ROUND_DURATION = 80;
 
 export function Canvas() {
   return (
@@ -29,6 +31,7 @@ interface DrawListenEvents {
   WORDS: ({ words }: { words: string[] }) => void;
   SEND_WORD: ({ word }: { word: string }) => void;
   NEW_PAINTER: ({ id, user }: { id: string; user: User }) => void;
+  TIME: (timeLeft: number) => void;
 }
 
 interface DrawEmitEvents {
@@ -63,19 +66,25 @@ export default function DrawView() {
   const socket = useSocket();
 
   const [options, optionsSet] = useState<string[]>();
+
   const handleOptions = useCallback((data: { words: string[] }) => {
     console.log("[WORDS]", data);
+
     optionsSet(data.words);
   }, []);
 
   const [rerolls, rerollsSet] = useState(0);
+
   const canRerollOptions = rerolls < 3;
+
   const rerollOptions = useCallback(() => {
     rerollsSet((prev) => prev + 1);
+
     socket.emit("REROLL_WORDS");
   }, [socket]);
 
   const [word, wordSet] = useState<string>();
+
   const handleWord = useCallback((data: { word: string }) => {
     console.log("[SEND_WORD]", data);
 
@@ -107,6 +116,8 @@ export default function DrawView() {
     }
 
     socket.emit("GUESS_WORD", { guess: input });
+
+    inputSet("");
   };
 
   const [isPainter, isPainterSet] = useState<boolean>(false);
@@ -124,6 +135,10 @@ export default function DrawView() {
     [socket]
   );
 
+  const [timer, timerSet] = useState<number>(ROUND_DURATION);
+
+  const handleTimer = useCallback((timeLeft: number) => timerSet(timeLeft), []);
+
   useEffect(() => {
     if (!socket || !user) {
       return;
@@ -134,11 +149,13 @@ export default function DrawView() {
     socket.on("WORDS", handleOptions);
     socket.on("SEND_WORD", handleWord);
     socket.on("NEW_PAINTER", handlePainter);
+    socket.on("TIME", handleTimer);
 
     return () => {
       socket.off("WORDS", handleOptions);
       socket.off("SEND_WORD", handleWord);
       socket.off("NEW_PAINTER", handlePainter);
+      socket.off("TIME", handleTimer);
 
       socket.disconnect();
     };
@@ -155,9 +172,19 @@ export default function DrawView() {
       return (
         <main className="flex flex-col min-h-screen select-none relative">
           <div className="p-4">
-            <p className="text-center text-body font-bold capitalize">
-              {title(word)}
-            </p>
+            <div className="relative">
+              <p className="text-center text-body font-bold capitalize">
+                {title(word)}
+              </p>
+
+              <div className="absolute left-0 top-1/2 transform-gpu -translate-y-1/2">
+                <div className="flex items-center space-x-2">
+                  <Clock size={20} />
+
+                  <span className="font-bold">{timer}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
@@ -244,12 +271,22 @@ export default function DrawView() {
       return (
         <main className="flex flex-col min-h-screen select-none relative">
           <div className="p-4">
-            <p
-              className="text-center text-body font-bold capitalize"
-              style={{ letterSpacing: "0.25em" }}
-            >
-              {obfuscatedWord}
-            </p>
+            <div className="relative">
+              <p
+                className="text-center text-body font-bold capitalize"
+                style={{ letterSpacing: "0.25em" }}
+              >
+                {obfuscatedWord}
+              </p>
+
+              <div className="absolute left-0 top-1/2 transform-gpu -translate-y-1/2">
+                <div className="flex items-center space-x-2">
+                  <Clock size={20} />
+
+                  <span className="font-bold">{timer}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
