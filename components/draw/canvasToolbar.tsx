@@ -1,6 +1,12 @@
 import classNames from "classnames";
-import { Dispatch, ReactNode, SetStateAction } from "react";
-import { Trash2 } from "react-feather";
+import {
+  ChangeEvent,
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useState,
+} from "react";
+import { Droplet, Trash2 } from "react-feather";
 
 function ToolButton({
   isActive,
@@ -30,33 +36,67 @@ const Brush = {
   L: () => <div className="h-4 w-4 rounded-full bg-current" />,
 };
 
+function ColorInput({
+  setColor,
+}: {
+  setColor: Dispatch<SetStateAction<string>>;
+}) {
+  const [displayColor, displayColorSet] = useState("#000000");
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+
+    displayColorSet(value);
+
+    setColor(value);
+  };
+
+  return (
+    <label
+      className="h-12 w-12 flex items-center justify-center rounded  text-body font-bold focus-within:outline-none focus-within:ring-4 bg-white dark:bg-systemGrey6-dark text-systemGrey6-dark dark:text-white"
+      htmlFor="color"
+    >
+      <input
+        id="color"
+        onChange={handleChange}
+        className="visually-hidden"
+        type="color"
+      />
+
+      <Droplet fill={displayColor} />
+    </label>
+  );
+}
+
 export default function CanvasToolbar({
   brushSizeSet,
   brushSize,
   handleClearCanvas,
+  setColor,
 }: {
   brushSizeSet: Dispatch<SetStateAction<"S" | "M" | "L">>;
   brushSize: "S" | "M" | "L";
   handleClearCanvas: () => void;
+  setColor: Dispatch<SetStateAction<string>>;
 }) {
   return (
     <div className="p-4">
       <div className="flex space-x-4">
         <div className="flex-1 flex space-x-2">
+          <ColorInput setColor={setColor} />
+
           <ToolButton
             isActive={brushSize === "S"}
             onClick={() => brushSizeSet("S")}
           >
             <Brush.S />
           </ToolButton>
-
           <ToolButton
             isActive={brushSize === "M"}
             onClick={() => brushSizeSet("M")}
           >
             <Brush.M />
           </ToolButton>
-
           <ToolButton
             isActive={brushSize === "L"}
             onClick={() => brushSizeSet("L")}

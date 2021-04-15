@@ -28,6 +28,7 @@ export interface DrawListenEvents {
   OLD_DRAW_OPERATIONS: (oldDrawOperations: DrawOperation[]) => void;
   SEND_WORD: ({ word }: { word?: string }) => void;
   TIME: (timeLeft: number) => void;
+  UPDATE_CANVAS: ({ canvasTimestamp }: { canvasTimestamp: number }) => void;
   WORDS: ({ words }: { words: string[] }) => void;
 }
 
@@ -141,6 +142,7 @@ export default function DrawView() {
     oldDrawOperationsSet(data);
   }, []);
 
+  const [color, setColor] = useState("#000000");
   const [brushSize, brushSizeSet] = useState<"S" | "M" | "L">("M");
 
   const handleCanvasOnChange = useCallback(
@@ -152,6 +154,14 @@ export default function DrawView() {
       socket.emit("DRAW_OPERATION", drawOperation);
     },
     [socket]
+  );
+
+  const [canvasTimestamp, canvasTimestampSet] = useState(0);
+  const handleUpdateCanvas = useCallback(
+    (data: { canvasTimestamp: number }) => {
+      canvasTimestampSet(data.canvasTimestamp);
+    },
+    []
   );
 
   const handleClearCanvas = useCallback(() => {
@@ -171,6 +181,7 @@ export default function DrawView() {
     socket.on("TIME", handleTimer);
     socket.on("DRAW_OPERATION", handleDrawOperation);
     socket.on("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
+    socket.on("UPDATE_CANVAS", handleUpdateCanvas);
 
     return () => {
       socket.off("WORDS", handleOptions);
@@ -179,6 +190,7 @@ export default function DrawView() {
       socket.off("TIME", handleTimer);
       socket.off("DRAW_OPERATION", handleDrawOperation);
       socket.off("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
+      socket.off("UPDATE_CANVAS", handleUpdateCanvas);
 
       socket.disconnect();
     };
@@ -212,8 +224,8 @@ export default function DrawView() {
 
           <Canvas
             brushSize={brushSize}
-            canvasTimestamp={0}
-            color="#000000"
+            canvasTimestamp={canvasTimestamp}
+            color={color}
             drawOperation={drawOperation}
             oldDrawOperations={oldDrawOperations}
             onChange={handleCanvasOnChange}
@@ -223,6 +235,7 @@ export default function DrawView() {
             brushSize={brushSize}
             brushSizeSet={brushSizeSet}
             handleClearCanvas={handleClearCanvas}
+            setColor={setColor}
           />
         </main>
       );
@@ -305,8 +318,8 @@ export default function DrawView() {
 
           <Canvas
             brushSize={brushSize}
-            canvasTimestamp={0}
-            color="#000000"
+            canvasTimestamp={canvasTimestamp}
+            color={color}
             disabled
             drawOperation={drawOperation}
             oldDrawOperations={oldDrawOperations}
