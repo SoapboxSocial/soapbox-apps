@@ -1,16 +1,9 @@
 import { User } from "@soapboxsocial/minis.js";
-import {
-  ChangeEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Clock, RefreshCw, Trash2 } from "react-feather";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Clock, RefreshCw } from "react-feather";
 import io, { Socket } from "socket.io-client";
 import title from "title";
-import Canvas, { DrawOperation } from "../../components/draw/canvas";
+import Canvas2, { CanvasOperation } from "../../components/draw/canvas2";
 import CanvasToolbar from "../../components/draw/canvasToolbar";
 import GuessToolbar from "../../components/draw/guessToolbar";
 import { useSession, useSoapboxRoomId } from "../../hooks";
@@ -23,9 +16,9 @@ const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 const ROUND_DURATION = 80;
 
 export interface DrawListenEvents {
-  DRAW_OPERATION: (drawOperation: DrawOperation) => void;
+  DRAW_OPERATION: (drawOperation: CanvasOperation) => void;
   NEW_PAINTER: ({ id, user }: { id: string; user: User }) => void;
-  OLD_DRAW_OPERATIONS: (oldDrawOperations: DrawOperation[]) => void;
+  OLD_DRAW_OPERATIONS: (data: CanvasOperation[]) => void;
   SEND_WORD: ({ word }: { word?: string }) => void;
   TIME: (timeLeft: number) => void;
   UPDATE_CANVAS: ({ canvasTimestamp }: { canvasTimestamp: number }) => void;
@@ -35,7 +28,7 @@ export interface DrawListenEvents {
 export interface DrawEmitEvents {
   CLEAR_CANVAS: () => void;
   CLOSE_GAME: () => void;
-  DRAW_OPERATION: (drawOperation: DrawOperation) => void;
+  DRAW_OPERATION: (drawOperation: CanvasOperation) => void;
   GUESS_WORD: ({ guess }: { guess: string }) => void;
   JOIN_GAME: ({ user }: { user: User }) => void;
   REROLL_WORDS: () => void;
@@ -129,15 +122,15 @@ export default function DrawView() {
 
   const handleTimer = useCallback((timeLeft: number) => timerSet(timeLeft), []);
 
-  const [drawOperation, drawOperationSet] = useState<DrawOperation>();
-  const handleDrawOperation = useCallback((data: DrawOperation) => {
+  const [drawOperation, drawOperationSet] = useState<CanvasOperation>();
+  const handleDrawOperation = useCallback((data: CanvasOperation) => {
     drawOperationSet(data);
   }, []);
 
-  const [oldDrawOperations, oldDrawOperationsSet] = useState<DrawOperation[]>(
+  const [oldDrawOperations, oldDrawOperationsSet] = useState<CanvasOperation[]>(
     []
   );
-  const handleOldDrawOperations = useCallback((data: DrawOperation[]) => {
+  const handleOldDrawOperations = useCallback((data: CanvasOperation[]) => {
     console.log("OLD_DRAW_OPERATIONS", data);
     oldDrawOperationsSet(data);
   }, []);
@@ -146,7 +139,7 @@ export default function DrawView() {
   const [brushSize, brushSizeSet] = useState<"S" | "M" | "L">("M");
 
   const handleCanvasOnChange = useCallback(
-    (drawOperation: DrawOperation) => {
+    (drawOperation: CanvasOperation) => {
       if (typeof drawOperation === "undefined") {
         return;
       }
@@ -222,7 +215,7 @@ export default function DrawView() {
             </div>
           </div>
 
-          <Canvas
+          <Canvas2
             brushSize={brushSize}
             canvasTimestamp={canvasTimestamp}
             color={color}
@@ -316,7 +309,7 @@ export default function DrawView() {
             </div>
           </div>
 
-          <Canvas
+          <Canvas2
             brushSize={brushSize}
             canvasTimestamp={canvasTimestamp}
             color={color}
