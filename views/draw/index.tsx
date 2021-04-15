@@ -22,13 +22,13 @@ export function Canvas() {
   );
 }
 
-interface PictionaryListenEvents {
+interface DrawListenEvents {
   WORDS: ({ words }: { words: string[] }) => void;
   SEND_WORD: ({ word }: { word: string }) => void;
   PAINTER_ID: ({ id }: { id: string }) => void;
 }
 
-interface PictionaryEmitEvents {
+interface DrawEmitEvents {
   JOIN_GAME: ({ user }: { user: User }) => void;
   CLOSE_GAME: () => void;
   REROLL_WORDS: () => void;
@@ -39,7 +39,7 @@ interface PictionaryEmitEvents {
 function useSocket() {
   const soapboxRoomId = useSoapboxRoomId();
 
-  const ref = useRef<Socket<PictionaryListenEvents, PictionaryEmitEvents>>();
+  const ref = useRef<Socket<DrawListenEvents, DrawEmitEvents>>();
 
   useEffect(() => {
     if (typeof soapboxRoomId === "string") {
@@ -54,7 +54,7 @@ function useSocket() {
   return ref.current;
 }
 
-export default function PictionaryView() {
+export default function DrawView() {
   const user = useSession();
 
   const socket = useSocket();

@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-systemGrey6-light dark:bg-black text-black dark:text-white;
+    @apply bg-systemGrey6-light text-black;
   }
 }
 
