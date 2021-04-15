@@ -23,13 +23,15 @@
     "react-hook-form": "^6.15.5",
     "react-use": "^17.2.1",
     "socket.io-client": "^4.0.1",
-    "swr": "^0.5.4"
+    "swr": "^0.5.4",
+    "title": "^3.4.3"
   },
   "devDependencies": {
     "@types/classnames": "^2.2.11",
     "@types/lodash.shuffle": "^4.2.6",
     "@types/node": "^14.14.35",
     "@types/react": "^17.0.3",
+    "@types/title": "^3.4.0",
     "autoprefixer": "^10.2.5",
     "postcss": "^8.2.8",
     "tailwindcss": "^2.0.4",

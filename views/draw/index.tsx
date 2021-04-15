@@ -7,12 +7,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { RefreshCw } from "react-feather";
+import { RefreshCw, Trash2 } from "react-feather";
 import io, { Socket } from "socket.io-client";
+import title from "title";
 import Input from "../../components/inputs/input";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
-import LoadingView from "../loading";
+import obfuscateWord from "../../lib/obfuscateWord";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
@@ -27,7 +28,7 @@ export function Canvas() {
 interface DrawListenEvents {
   WORDS: ({ words }: { words: string[] }) => void;
   SEND_WORD: ({ word }: { word: string }) => void;
-  PAINTER_ID: ({ id }: { id: string }) => void;
+  NEW_PAINTER: ({ id, user }: { id: string; user: User }) => void;
 }
 
 interface DrawEmitEvents {
@@ -99,20 +100,20 @@ export default function DrawView() {
     socket.emit("GUESS_WORD", { guess: input });
   };
 
-  const [painterID, painterIDSet] = useState<string>();
-  const handlePainterID = useCallback(({ id }) => {
-    console.log("PAINTER_ID", id);
+  const [painter, painterSet] = useState<{ id: string; user: User }>();
+  const handlePainter = useCallback(({ id, user }) => {
+    console.log("NEW_PAINTER", id, user);
 
-    painterIDSet(id);
+    painterSet({ id, user });
   }, []);
 
   const isPainter = useMemo(() => {
-    if (typeof socket?.id === "string") {
-      return isEqual(painterID, socket.id);
+    if (typeof painter?.id === "string" && typeof socket?.id === "string") {
+      return isEqual(painter.id, socket.id);
     }
 
     return false;
-  }, [socket, painterID]);
+  }, [socket, painter]);
 
   useEffect(() => {
     if (!socket || !user) {
@@ -123,12 +124,12 @@ export default function DrawView() {
 
     socket.on("WORDS", handleOptions);
     socket.on("SEND_WORD", handleWord);
-    socket.on("PAINTER_ID", handlePainterID);
+    socket.on("NEW_PAINTER", handlePainter);
 
     return () => {
       socket.off("WORDS", handleOptions);
       socket.off("SEND_WORD", handleWord);
-      socket.off("PAINTER_ID", handlePainterID);
+      socket.off("NEW_PAINTER", handlePainter);
 
       socket.disconnect();
     };
@@ -153,10 +154,10 @@ export default function DrawView() {
               {options?.map((word) => (
                 <li key={word}>
                   <button
-                    className="w-full bg-white dark:bg-systemGrey6-dark rounded-large text-center focus:outline-none focus:ring-4 py-6 text-title3 font-bold capitalize"
+                    className="w-full bg-white dark:bg-systemGrey6-dark rounded-large text-center focus:outline-none focus:ring-4 py-6 text-title3 font-bold"
                     onClick={sendSelectedOption(word)}
                   >
-                    {word.toLowerCase()}
+                    {title(word)}
                   </button>
                 </li>
               ))}
@@ -181,28 +182,70 @@ export default function DrawView() {
 
     return (
       <main className="flex flex-col min-h-screen select-none relative">
-        <div className="flex-1 p-4">
-          <h1>DRAW {word}</h1>
+        <div className="p-4">
+          <p className="text-center text-body font-bold capitalize">
+            {title(word)}
+          </p>
+        </div>
+
+        <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
+
+        <div className="p-4">
+          <div className="flex space-x-4">
+            <div className="flex-1 flex space-x-2">
+              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
+                <div className="h-2 w-2 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
+              </button>
+
+              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
+                <div className="h-4 w-4 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
+              </button>
+
+              <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-body font-bold focus:outline-none focus:ring-4">
+                <div className="h-6 w-6 rounded-full bg-systemGrey6-dark dark:bg-white"></div>
+              </button>
+            </div>
+
+            <button className="h-12 w-12 flex items-center justify-center rounded bg-white dark:bg-systemGrey6-dark text-systemRed-light dark:text-systemRed-dark text-body font-bold focus:outline-none focus:ring-4">
+              <Trash2 />
+            </button>
+          </div>
         </div>
       </main>
     );
   }
 
-  if (typeof word === "undefined") {
-    return <LoadingView />;
+  if (typeof painter !== "undefined" && typeof word === "undefined") {
+    return (
+      <main className="flex flex-col min-h-screen select-none relative">
+        <div className="flex items-center justify-center flex-1 pt-4 px-4">
+          <p className="text-title2 text-center">
+            {painter.user.display_name} is choosing a word!
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="flex flex-col min-h-screen select-none relative">
-      <div className="flex-1">
-        <p>{word}</p>
+      <div className="p-4">
+        <p
+          className="text-center text-body font-bold capitalize"
+          style={{ letterSpacing: "0.25em" }}
+        >
+          {obfuscateWord(word)}
+        </p>
       </div>
+
+      <canvas className="bg-white w-full flex-1 rounded-large"></canvas>
 
       <div className="p-4">
         <div className="flex space-x-2">
           <Input
-            className="py-3 px-5 w-full rounded bg-white dark:bg-systemGrey6-dark focus:outline-none focus:ring-4"
+            className="py-3 px-4 w-full rounded bg-white dark:bg-systemGrey6-dark focus:outline-none focus:ring-4"
             value={input}
+            placeholder="Type your guess..."
             onChange={onChange}
             type="text"
           />
