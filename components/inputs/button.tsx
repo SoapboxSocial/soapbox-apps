@@ -30,8 +30,8 @@ export function CircleIconButton({
 
   return (
     <button
-      className="w-8 h-8 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
       {...rest}
+      className="w-8 h-8 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
     >
       <span className={buttonIconClassNames}>{icon}</span>
     </button>

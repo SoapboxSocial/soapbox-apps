@@ -7,7 +7,9 @@ import {
   useRef,
   useState,
 } from "react";
+import { RefreshCw } from "react-feather";
 import io, { Socket } from "socket.io-client";
+import Input from "../../components/inputs/input";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
 import LoadingView from "../loading";
@@ -136,19 +138,44 @@ export default function DrawView() {
     if (typeof word === "undefined")
       return (
         <main className="flex flex-col min-h-screen select-none relative">
-          <ul>
-            {options?.map((word) => (
-              <li key={word}>
-                <button onClick={sendSelectedOption(word)}>{word}</button>
-              </li>
-            ))}
+          <div className="pt-4 px-4">
+            <h1 className="text-title2 font-bold text-center">
+              Draw With Friends
+            </h1>
 
-            {canRerollOptions && (
-              <li>
-                <button onClick={rerollOptions}>Re-Roll</button>
-              </li>
-            )}
-          </ul>
+            <div className="h-2" />
+
+            <p className="text-body text-center">Choose a word to draw</p>
+          </div>
+
+          <div className="flex-1 px-4 pt-4">
+            <ul className="space-y-4">
+              {options?.map((word) => (
+                <li key={word}>
+                  <button
+                    className="w-full bg-white dark:bg-systemGrey6-dark rounded-large text-center focus:outline-none focus:ring-4 py-6 text-title3 font-bold capitalize"
+                    onClick={sendSelectedOption(word)}
+                  >
+                    {word.toLowerCase()}
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <div className="h-4" />
+
+            <div className="flex justify-center">
+              {canRerollOptions && (
+                <button
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
+                  type="button"
+                  onClick={rerollOptions}
+                >
+                  <RefreshCw />
+                </button>
+              )}
+            </div>
+          </div>
         </main>
       );
 
@@ -172,15 +199,20 @@ export default function DrawView() {
       </div>
 
       <div className="p-4">
-        <div className="flex space-x-4">
-          <input
-            className="w-full"
+        <div className="flex space-x-2">
+          <Input
+            className="py-3 px-5 w-full rounded bg-white dark:bg-systemGrey6-dark focus:outline-none focus:ring-4"
             value={input}
             onChange={onChange}
             type="text"
           />
 
-          <button onClick={sendGuess}>Guess</button>
+          <button
+            className="py-3 px-4 rounded bg-soapbox text-white text-body font-bold focus:outline-none focus:ring-4"
+            onClick={sendGuess}
+          >
+            Guess
+          </button>
         </div>
       </div>
     </main>
