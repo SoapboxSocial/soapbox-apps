@@ -86,7 +86,7 @@ export default function DrawView() {
   const [painter, painterSet] = useState<Painter>();
   const handlePainter = useCallback(
     (data: Painter) => {
-      if (isEqual(data.id, socket.id)) isPainterSet(true);
+      isPainterSet(isEqual(data.id, socket.id));
 
       painterSet(data);
     },
