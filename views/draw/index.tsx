@@ -1,4 +1,5 @@
 import { User } from "@soapboxsocial/minis.js";
+import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
 import title from "title";
@@ -11,7 +12,6 @@ import Spinner from "../../components/spinner";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
 import obfuscateWord from "../../lib/obfuscateWord";
-import LoadingView from "../loading";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
@@ -177,8 +177,21 @@ export default function DrawView() {
     };
   }, [user, socket]);
 
+  const main = useRef<HTMLElement>();
+
+  useEffect(() => {
+    disableBodyScroll(main?.current);
+
+    return () => {
+      enableBodyScroll(main?.current);
+    };
+  }, [main]);
+
   return (
-    <main className="flex flex-col min-h-screen select-none relative">
+    <main
+      ref={main}
+      className="flex flex-col min-h-screen select-none relative"
+    >
       {typeof word === "string" ? (
         <div className="p-4">
           <div className="relative">

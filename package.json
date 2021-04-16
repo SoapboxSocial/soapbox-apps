@@ -30,6 +30,7 @@
     "title": "^3.4.3"
   },
   "devDependencies": {
+    "@types/body-scroll-lock": "^2.6.1",
     "@types/classnames": "^2.2.11",
     "@types/lodash.shuffle": "^4.2.6",
     "@types/node": "^14.14.35",
