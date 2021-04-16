@@ -1,4 +1,4 @@
-import { User } from "@soapboxsocial/minis.js";
+import { onClose, User } from "@soapboxsocial/minis.js";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
@@ -67,6 +67,8 @@ function useSocket() {
 
 export default function DrawView() {
   const user = useSession();
+
+  const soapboxRoomId = useSoapboxRoomId();
 
   const socket = useSocket();
 
@@ -237,6 +239,17 @@ export default function DrawView() {
    * Derived Values
    */
   const obfuscatedWord = useMemo(() => obfuscateWord(word), [word]);
+
+  /**
+   * Close Mini
+   */
+  useEffect(() => {
+    if (soapboxRoomId && socket) {
+      onClose(() => {
+        socket.emit("CLOSE_GAME");
+      });
+    }
+  }, [soapboxRoomId, socket]);
 
   return (
     <main
