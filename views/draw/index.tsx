@@ -71,6 +71,13 @@ export default function DrawView() {
   const socket = useSocket();
 
   /**
+   * Canvas Tools
+   */
+  const [color, setColor] = useState("#000000");
+
+  const [brushSize, brushSizeSet] = useState<"S" | "M" | "L">("M");
+
+  /**
    * Listener Handlers
    */
   const [options, optionsSet] = useState<string[]>();
@@ -93,6 +100,9 @@ export default function DrawView() {
   const [painter, painterSet] = useState<Painter>();
   const handlePainter = useCallback(
     (data: Painter) => {
+      setColor("#000000");
+      brushSizeSet("M");
+
       isPainterSet(isEqual(data.id, socket.id));
 
       painterSet(data);
@@ -214,6 +224,7 @@ export default function DrawView() {
    * Locking Body Scroll
    */
   const main = useRef<HTMLElement>();
+
   useEffect(() => {
     disableBodyScroll(main?.current);
 
@@ -221,12 +232,6 @@ export default function DrawView() {
       enableBodyScroll(main?.current);
     };
   }, [main]);
-
-  /**
-   * Canvas Tools
-   */
-  const [color, setColor] = useState("#000000");
-  const [brushSize, brushSizeSet] = useState<"S" | "M" | "L">("M");
 
   /**
    * Derived Values
