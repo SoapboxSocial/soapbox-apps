@@ -1,12 +1,13 @@
 import { User } from "@soapboxsocial/minis.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Clock, RefreshCw } from "react-feather";
 import io, { Socket } from "socket.io-client";
 import title from "title";
 import Canvas2, { CanvasOperation } from "../../components/draw/canvas2";
 import CanvasToolbar from "../../components/draw/canvasToolbar";
+import ChooseWordPanel from "../../components/draw/chooseWordPanel";
 import GuessToolbar from "../../components/draw/guessToolbar";
 import Timer from "../../components/draw/timer";
+import Spinner from "../../components/spinner";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
 import obfuscateWord from "../../lib/obfuscateWord";
@@ -65,16 +66,6 @@ export default function DrawView() {
     optionsSet(data.words);
   }, []);
 
-  const [rerolls, rerollsSet] = useState(0);
-
-  const canRerollOptions = rerolls < 3;
-
-  const rerollOptions = useCallback(() => {
-    rerollsSet((prev) => prev + 1);
-
-    socket.emit("REROLL_WORDS");
-  }, [socket]);
-
   const [word, wordSet] = useState<string>();
 
   const handleWord = useCallback((data: { word: string }) => {
@@ -97,6 +88,10 @@ export default function DrawView() {
     },
     [socket]
   );
+
+  const sendRerollOptions = useCallback(() => {
+    socket.emit("REROLL_WORDS");
+  }, [socket]);
 
   const sendGuess = (input: string) => {
     socket.emit("GUESS_WORD", { guess: input });
@@ -182,145 +177,79 @@ export default function DrawView() {
     };
   }, [user, socket]);
 
-  /**
-   * Game Has A Painter And We're It
-   */
-  if (!!painter && isPainter) {
-    /**
-     * We're Drawing A Word
-     */
-    if (typeof word === "string")
-      return (
-        <main className="flex flex-col min-h-screen select-none relative">
-          <div className="p-4">
-            <div className="relative">
-              <p className="text-center text-body font-bold capitalize">
-                {title(word)}
-              </p>
+  return (
+    <main className="flex flex-col min-h-screen select-none relative">
+      {typeof word === "string" ? (
+        <div className="p-4">
+          <div className="relative">
+            <p
+              className="text-center text-body font-bold capitalize"
+              style={{ letterSpacing: isPainter ? "0.02em" : "0.25em" }}
+            >
+              {isPainter ? title(word) : obfuscatedWord}
+            </p>
 
-              <div className="absolute left-0 top-1/2 transform-gpu -translate-y-1/2">
-                <Timer socket={socket} />
-              </div>
+            <div className="absolute left-0 top-1/2 transform-gpu -translate-y-1/2">
+              <Timer socket={socket} />
             </div>
           </div>
+        </div>
+      ) : isPainter ? (
+        <div className="p-4">
+          <div className="relative">
+            <h1 className="text-title2 font-bold text-center">
+              Draw With Friends
+            </h1>
 
-          <Canvas2
-            brushSize={brushSize}
-            canvasTimestamp={canvasTimestamp}
-            color={color}
-            drawOperation={drawOperation}
-            oldDrawOperations={oldDrawOperations}
-            onChange={handleCanvasOnChange}
+            <div className="h-2" />
+
+            <p className="text-body text-center">Choose a word to draw</p>
+          </div>
+        </div>
+      ) : null}
+
+      {typeof word === "string" ? (
+        <Canvas2
+          brushSize={brushSize}
+          canvasTimestamp={canvasTimestamp}
+          color={color}
+          disabled={!isPainter}
+          drawOperation={drawOperation}
+          oldDrawOperations={oldDrawOperations}
+          onChange={handleCanvasOnChange}
+        />
+      ) : typeof painter === "object" ? (
+        isPainter ? (
+          <ChooseWordPanel
+            options={options}
+            sendRerollOptions={sendRerollOptions}
+            sendSelectedOption={sendSelectedOption}
           />
+        ) : (
+          <div className="flex-1 px-4 flex items-center justify-center">
+            <p className="text-title2 text-center">
+              {painter.user.display_name} is choosing a word!
+            </p>
+          </div>
+        )
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <Spinner />
+        </div>
+      )}
 
+      {typeof word === "string" ? (
+        isPainter ? (
           <CanvasToolbar
             brushSize={brushSize}
             brushSizeSet={brushSizeSet}
             handleClearCanvas={handleClearCanvas}
             setColor={setColor}
           />
-        </main>
-      );
-
-    /**
-     * We're Selecting A Word
-     */
-    return (
-      <main className="flex flex-col min-h-screen select-none relative">
-        <div className="pt-4 px-4">
-          <h1 className="text-title2 font-bold text-center">
-            Draw With Friends
-          </h1>
-
-          <div className="h-2" />
-
-          <p className="text-body text-center">Choose a word to draw</p>
-        </div>
-
-        <div className="flex-1 px-4 pt-4">
-          <ul className="space-y-4">
-            {options?.map((option) => (
-              <li key={option}>
-                <button
-                  className="w-full bg-white dark:bg-systemGrey6-dark rounded text-center focus:outline-none focus:ring-4 py-3 text-title3 font-bold"
-                  onClick={sendSelectedOption(option)}
-                >
-                  {title(option)}
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="h-4" />
-
-          <div className="flex justify-center">
-            {canRerollOptions && (
-              <button
-                className="w-12 h-12 flex items-center justify-center rounded-full bg-soapbox text-white focus:outline-none focus:ring-4"
-                type="button"
-                onClick={rerollOptions}
-              >
-                <RefreshCw />
-              </button>
-            )}
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  /**
-   * Game Has A Painter, And We're Not It Right Now
-   */
-  if (!!painter && !isPainter) {
-    /**
-     * Word Selected, We're Guessing The Word Now
-     */
-    if (typeof word === "string")
-      return (
-        <main className="flex flex-col min-h-screen select-none relative">
-          <div className="p-4">
-            <div className="relative">
-              <p
-                className="text-center text-body font-bold capitalize"
-                style={{ letterSpacing: "0.25em" }}
-              >
-                {obfuscatedWord}
-              </p>
-
-              <div className="absolute left-0 top-1/2 transform-gpu -translate-y-1/2">
-                <Timer socket={socket} />
-              </div>
-            </div>
-          </div>
-
-          <Canvas2
-            brushSize={brushSize}
-            canvasTimestamp={canvasTimestamp}
-            color={color}
-            disabled
-            drawOperation={drawOperation}
-            oldDrawOperations={oldDrawOperations}
-            onChange={handleCanvasOnChange}
-          />
-
+        ) : (
           <GuessToolbar sendGuess={sendGuess} />
-        </main>
-      );
-
-    /**
-     * Waiting For Word To Be Selected
-     */
-    return (
-      <main className="flex flex-col min-h-screen select-none relative">
-        <div className="flex items-center justify-center flex-1 pt-4 px-4">
-          <p className="text-title2 text-center">
-            {painter.user.display_name} is choosing a word!
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  return <LoadingView />;
+        )
+      ) : null}
+    </main>
+  );
 }
