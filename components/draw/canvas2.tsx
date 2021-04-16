@@ -48,6 +48,8 @@ export default function Canvas2({
       return;
     }
 
+    console.log("oldDrawOperation", oldDrawOperations);
+
     setLines(oldDrawOperations);
   }, [oldDrawOperations]);
 

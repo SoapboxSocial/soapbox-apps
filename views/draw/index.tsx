@@ -20,6 +20,12 @@ type Painter = {
   user: User;
 };
 
+type Score = {
+  id: string;
+  display_name: string;
+  score: number;
+};
+
 export interface DrawListenEvents {
   DRAW_OPERATION: (drawOperation: CanvasOperation) => void;
   NEW_PAINTER: ({ id, user }: { id: string; user: User }) => void;
@@ -28,6 +34,7 @@ export interface DrawListenEvents {
   TIME: (timeLeft: number) => void;
   UPDATE_CANVAS: ({ canvasTimestamp }: { canvasTimestamp: number }) => void;
   WORDS: ({ words }: { words: string[] }) => void;
+  SEND_SCORES: (scores?: Score[]) => void;
 }
 
 export interface DrawEmitEvents {
@@ -108,10 +115,23 @@ export default function DrawView() {
   const [canvasTimestamp, canvasTimestampSet] = useState(0);
   const handleUpdateCanvas = useCallback(
     (data: { canvasTimestamp: number }) => {
+      oldDrawOperationsSet([]);
+
       canvasTimestampSet(data.canvasTimestamp);
     },
     []
   );
+
+  const [scores, scoresSet] = useState<Score[]>();
+  const handleScores = useCallback((data?: Score[]) => {
+    if (typeof data === "undefined") {
+      scoresSet(null);
+
+      return;
+    }
+
+    scoresSet(data);
+  }, []);
 
   /**
    * Setup Listeners
@@ -129,6 +149,7 @@ export default function DrawView() {
     socket.on("DRAW_OPERATION", handleDrawOperation);
     socket.on("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
     socket.on("UPDATE_CANVAS", handleUpdateCanvas);
+    socket.on("SEND_SCORES", handleScores);
 
     return () => {
       socket.off("WORDS", handleOptions);
@@ -137,6 +158,7 @@ export default function DrawView() {
       socket.off("DRAW_OPERATION", handleDrawOperation);
       socket.off("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
       socket.off("UPDATE_CANVAS", handleUpdateCanvas);
+      socket.off("SEND_SCORES", handleScores);
 
       socket.disconnect();
     };
@@ -241,6 +263,34 @@ export default function DrawView() {
             <div className="h-2" />
 
             <p className="text-body text-center">Choose a word to draw</p>
+          </div>
+        </div>
+      ) : null}
+
+      {!!scores ? (
+        <div className="absolute left-0 right-0 bottom-0 top-0 bg-black bg-opacity-80 z-50">
+          <div className="pt-4 px-4">
+            <h1 className="text-title2 font-bold text-center">Scoreboard</h1>
+          </div>
+
+          <div className="flex-1 px-4 pt-4">
+            <ul className="text-xl space-y-4">
+              <li className="flex font-bold">
+                <div className="w-20">Rank</div>
+                <div className="flex-1">Player</div>
+                <div className="flex-1 text-center">Score</div>
+              </li>
+
+              {scores.map((el, i) => (
+                <li key={el.id} className="flex">
+                  <div className="w-20">{`#${i + 1}`}</div>
+                  <div className="flex-1 min-w-0">
+                    <span className="truncate">{el.display_name}</span>
+                  </div>
+                  <div className="flex-1 text-center">{el.score}</div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       ) : null}

@@ -3,7 +3,7 @@ import { Clock } from "react-feather";
 import { Socket } from "socket.io-client";
 import { DrawEmitEvents, DrawListenEvents } from "../../views/draw";
 
-const ROUND_DURATION = 80;
+const ROUND_DURATION = 60;
 
 type Props = {
   socket: Socket<DrawListenEvents, DrawEmitEvents>;
