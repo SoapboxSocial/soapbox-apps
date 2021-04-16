@@ -6,14 +6,13 @@ import title from "title";
 import Canvas2, { CanvasOperation } from "../../components/draw/canvas2";
 import CanvasToolbar from "../../components/draw/canvasToolbar";
 import GuessToolbar from "../../components/draw/guessToolbar";
+import Timer from "../../components/draw/timer";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
 import obfuscateWord from "../../lib/obfuscateWord";
 import LoadingView from "../loading";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
-
-const ROUND_DURATION = 80;
 
 export interface DrawListenEvents {
   DRAW_OPERATION: (drawOperation: CanvasOperation) => void;
@@ -118,10 +117,6 @@ export default function DrawView() {
     [socket]
   );
 
-  const [timer, timerSet] = useState<number>(ROUND_DURATION);
-
-  const handleTimer = useCallback((timeLeft: number) => timerSet(timeLeft), []);
-
   const [drawOperation, drawOperationSet] = useState<CanvasOperation>();
   const handleDrawOperation = useCallback((data: CanvasOperation) => {
     drawOperationSet(data);
@@ -171,7 +166,6 @@ export default function DrawView() {
     socket.on("WORDS", handleOptions);
     socket.on("SEND_WORD", handleWord);
     socket.on("NEW_PAINTER", handlePainter);
-    socket.on("TIME", handleTimer);
     socket.on("DRAW_OPERATION", handleDrawOperation);
     socket.on("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
     socket.on("UPDATE_CANVAS", handleUpdateCanvas);
@@ -180,7 +174,6 @@ export default function DrawView() {
       socket.off("WORDS", handleOptions);
       socket.off("SEND_WORD", handleWord);
       socket.off("NEW_PAINTER", handlePainter);
-      socket.off("TIME", handleTimer);
       socket.off("DRAW_OPERATION", handleDrawOperation);
       socket.off("OLD_DRAW_OPERATIONS", handleOldDrawOperations);
       socket.off("UPDATE_CANVAS", handleUpdateCanvas);
@@ -206,11 +199,7 @@ export default function DrawView() {
               </p>
 
               <div className="absolute left-0 top-1/2 transform-gpu -translate-y-1/2">
-                <div className="flex items-center space-x-2">
-                  <Clock size={20} />
-
-                  <span className="font-bold">{timer}</span>
-                </div>
+                <Timer socket={socket} />
               </div>
             </div>
           </div>
@@ -300,11 +289,7 @@ export default function DrawView() {
               </p>
 
               <div className="absolute left-0 top-1/2 transform-gpu -translate-y-1/2">
-                <div className="flex items-center space-x-2">
-                  <Clock size={20} />
-
-                  <span className="font-bold">{timer}</span>
-                </div>
+                <Timer socket={socket} />
               </div>
             </div>
           </div>
