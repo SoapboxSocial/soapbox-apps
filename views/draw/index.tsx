@@ -15,6 +15,11 @@ import obfuscateWord from "../../lib/obfuscateWord";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
+type Painter = {
+  id: string;
+  user: User;
+};
+
 export interface DrawListenEvents {
   DRAW_OPERATION: (drawOperation: CanvasOperation) => void;
   NEW_PAINTER: ({ id, user }: { id: string; user: User }) => void;
@@ -58,19 +63,16 @@ export default function DrawView() {
 
   const socket = useSocket();
 
+  /**
+   * Listener Handlers
+   */
   const [options, optionsSet] = useState<string[]>();
-
   const handleOptions = useCallback((data: { words: string[] }) => {
-    console.log("[WORDS]", data);
-
     optionsSet(data.words);
   }, []);
 
   const [word, wordSet] = useState<string>();
-
   const handleWord = useCallback((data: { word: string }) => {
-    console.log("[SEND_WORD]", data);
-
     if (typeof data.word === "string") {
       wordSet(title(data.word));
 
@@ -80,31 +82,10 @@ export default function DrawView() {
     wordSet(undefined);
   }, []);
 
-  const obfuscatedWord = useMemo(() => obfuscateWord(word), [word]);
-
-  const sendSelectedOption = useCallback(
-    (word: string) => () => {
-      socket.emit("SELECT_WORD", { word });
-    },
-    [socket]
-  );
-
-  const sendRerollOptions = useCallback(() => {
-    socket.emit("REROLL_WORDS");
-  }, [socket]);
-
-  const sendGuess = (input: string) => {
-    socket.emit("GUESS_WORD", { guess: input });
-  };
-
   const [isPainter, isPainterSet] = useState<boolean>(false);
-
-  const [painter, painterSet] = useState<{ id: string; user: User }>();
-
+  const [painter, painterSet] = useState<Painter>();
   const handlePainter = useCallback(
-    (data: { id: string; user: User }) => {
-      console.log("[NEW_PAINTER]", data);
-
+    (data: Painter) => {
       if (isEqual(data.id, socket.id)) isPainterSet(true);
 
       painterSet(data);
@@ -121,23 +102,8 @@ export default function DrawView() {
     []
   );
   const handleOldDrawOperations = useCallback((data: CanvasOperation[]) => {
-    console.log("OLD_DRAW_OPERATIONS", data);
     oldDrawOperationsSet(data);
   }, []);
-
-  const [color, setColor] = useState("#000000");
-  const [brushSize, brushSizeSet] = useState<"S" | "M" | "L">("M");
-
-  const handleCanvasOnChange = useCallback(
-    (drawOperation: CanvasOperation) => {
-      if (typeof drawOperation === "undefined") {
-        return;
-      }
-
-      socket.emit("DRAW_OPERATION", drawOperation);
-    },
-    [socket]
-  );
 
   const [canvasTimestamp, canvasTimestampSet] = useState(0);
   const handleUpdateCanvas = useCallback(
@@ -147,10 +113,9 @@ export default function DrawView() {
     []
   );
 
-  const handleClearCanvas = useCallback(() => {
-    socket.emit("CLEAR_CANVAS");
-  }, [socket]);
-
+  /**
+   * Setup Listeners
+   */
   useEffect(() => {
     if (!socket || !user) {
       return;
@@ -177,8 +142,56 @@ export default function DrawView() {
     };
   }, [user, socket]);
 
-  const main = useRef<HTMLElement>();
+  /**
+   * Emitters
+   */
+  const sendSelectedOption = useCallback(
+    (word: string) => {
+      return () => {
+        if (typeof word === "undefined") {
+          return;
+        }
 
+        socket.emit("SELECT_WORD", { word });
+      };
+    },
+    [socket]
+  );
+
+  const sendRerollOptions = useCallback(() => {
+    socket.emit("REROLL_WORDS");
+  }, [socket]);
+
+  const sendGuess = useCallback(
+    (input: string) => {
+      if (typeof input === "undefined") {
+        return;
+      }
+
+      socket.emit("GUESS_WORD", { guess: input });
+    },
+    [socket]
+  );
+
+  const sendCanvasOperation = useCallback(
+    (drawOperation: CanvasOperation) => {
+      if (typeof drawOperation === "undefined") {
+        return;
+      }
+
+      socket.emit("DRAW_OPERATION", drawOperation);
+    },
+    [socket]
+  );
+
+  const handleClearCanvas = useCallback(() => {
+    socket.emit("CLEAR_CANVAS");
+  }, [socket]);
+
+  /**
+   * Locking Body Scroll
+   */
+  const main = useRef<HTMLElement>();
   useEffect(() => {
     disableBodyScroll(main?.current);
 
@@ -186,6 +199,17 @@ export default function DrawView() {
       enableBodyScroll(main?.current);
     };
   }, [main]);
+
+  /**
+   * Canvas Tools
+   */
+  const [color, setColor] = useState("#000000");
+  const [brushSize, brushSizeSet] = useState<"S" | "M" | "L">("M");
+
+  /**
+   * Derived Values
+   */
+  const obfuscatedWord = useMemo(() => obfuscateWord(word), [word]);
 
   return (
     <main
@@ -229,7 +253,7 @@ export default function DrawView() {
           disabled={!isPainter}
           drawOperation={drawOperation}
           oldDrawOperations={oldDrawOperations}
-          onChange={handleCanvasOnChange}
+          onChange={sendCanvasOperation}
         />
       ) : typeof painter === "object" ? (
         isPainter ? (
