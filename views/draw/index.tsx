@@ -268,12 +268,16 @@ export default function DrawView() {
       ) : null}
 
       {!!scores ? (
-        <div className="absolute left-0 right-0 bottom-0 top-0 bg-black bg-opacity-80 z-50">
-          <div className="pt-4 px-4">
+        <div className="absolute left-0 right-0 bottom-0 top-0 bg-black bg-opacity-80 text-white z-50">
+          <div className="p-4">
             <h1 className="text-title2 font-bold text-center">Scoreboard</h1>
+
+            <div className="h-2" />
+
+            <p className="text-body text-center">The word was: {word}</p>
           </div>
 
-          <div className="flex-1 px-4 pt-4">
+          <div className="flex-1 px-4">
             <ul className="text-xl space-y-4">
               <li className="flex font-bold">
                 <div className="w-20">Rank</div>
@@ -284,9 +288,11 @@ export default function DrawView() {
               {scores.map((el, i) => (
                 <li key={el.id} className="flex">
                   <div className="w-20">{`#${i + 1}`}</div>
+
                   <div className="flex-1 min-w-0">
                     <span className="truncate">{el.display_name}</span>
                   </div>
+
                   <div className="flex-1 text-center">{el.score}</div>
                 </li>
               ))}
