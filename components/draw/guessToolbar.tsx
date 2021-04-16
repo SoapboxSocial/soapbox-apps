@@ -16,7 +16,7 @@ export default function GuessToolbar({
       return;
     }
 
-    sendGuess(input);
+    sendGuess(input.trimEnd());
 
     inputSet("");
   };
