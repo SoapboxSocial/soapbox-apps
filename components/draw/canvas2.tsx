@@ -10,9 +10,6 @@ type Props = {
   drawOperation?: CanvasOperation;
   oldDrawOperations?: CanvasOperation[];
   onChange: (canvasOperation: CanvasOperation) => void;
-  /**
-   * Used to trigger 'CLEAR_CANVAS' events
-   */
   canvasTimestamp: number;
 };
 
@@ -28,6 +25,10 @@ export type CanvasOperation = {
   strokeWidth: number;
 };
 
+type DrawEvent =
+  | KonvaEventObject<TouchEvent>
+  | KonvaEventObject<globalThis.MouseEvent>;
+
 export default function Canvas2({
   brushSize,
   color,
@@ -40,42 +41,37 @@ export default function Canvas2({
   const [parent, { width, height }] = useMeasure();
 
   const [lines, setLines] = useState<CanvasOperation[]>([]);
+  const isDrawing = useRef(false);
 
   useEffect(() => {
-    if (parent && typeof oldDrawOperations === "undefined") {
+    if (typeof oldDrawOperations === "undefined") {
       return;
     }
 
-    console.log({ oldDrawOperations });
-
     setLines(oldDrawOperations);
-  }, [parent, oldDrawOperations]);
+  }, [oldDrawOperations]);
 
   useEffect(() => {
     setLines([]);
   }, [canvasTimestamp]);
 
   useEffect(() => {
-    if (!disabled && typeof drawOperation === "undefined") {
+    if (!disabled || typeof drawOperation === "undefined") {
       return;
     }
 
-    setLines([...lines, drawOperation]);
+    console.log("drawOperation", drawOperation);
+
+    setLines((prev) => [...prev, drawOperation]);
   }, [drawOperation]);
 
-  const isDrawing = useRef(false);
-
-  const handleMouseDown = (
-    event:
-      | KonvaEventObject<TouchEvent>
-      | KonvaEventObject<globalThis.MouseEvent>
-  ) => {
+  const startDraw = (event: DrawEvent) => {
     isDrawing.current = true;
 
     const pos = event.target.getStage().getPointerPosition();
 
-    setLines([
-      ...lines,
+    setLines((prev) => [
+      ...prev,
       {
         stroke: color,
         points: [pos.x, pos.y],
@@ -84,12 +80,8 @@ export default function Canvas2({
     ]);
   };
 
-  const handleMouseMove = (
-    event:
-      | KonvaEventObject<TouchEvent>
-      | KonvaEventObject<globalThis.MouseEvent>
-  ) => {
-    if (!isDrawing.current || disabled) {
+  const draw = (event: DrawEvent) => {
+    if (!isDrawing.current) {
       return;
     }
 
@@ -108,28 +100,27 @@ export default function Canvas2({
     setLines(lines.concat());
   };
 
-  const handleMouseUp = () => {
+  const endDraw = () => {
     isDrawing.current = false;
 
-    onChange(lines.pop());
+    onChange(lines[lines.length - 1]);
   };
 
   return (
     <div ref={parent} className="max-w-full bg-white flex-1 rounded-large">
       {parent && (
         <Stage
-          // @ts-ignore
           width={width}
           height={height}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onTouchEnd={handleMouseUp}
-          onTouchMove={handleMouseMove}
-          onTouchStart={handleMouseDown}
+          onMouseDown={disabled ? undefined : startDraw}
+          onTouchStart={disabled ? undefined : startDraw}
+          onMouseMove={disabled ? undefined : draw}
+          onTouchMove={disabled ? undefined : draw}
+          onMouseUp={disabled ? undefined : endDraw}
+          onTouchEnd={disabled ? undefined : endDraw}
         >
           <Layer>
-            {lines.map((line, i) => (
+            {lines?.map((line, i) => (
               <Line
                 globalCompositeOperation="source-over"
                 key={i}
@@ -146,3 +137,65 @@ export default function Canvas2({
     </div>
   );
 }
+
+const App = () => {
+  const [tool, setTool] = useState("pen");
+  const [lines, setLines] = useState([]);
+  const isDrawing = useRef(false);
+
+  const handleMouseDown = (e) => {
+    isDrawing.current = true;
+    const pos = e.target.getStage().getPointerPosition();
+    setLines([...lines, { tool, points: [pos.x, pos.y] }]);
+  };
+
+  const handleMouseMove = (e) => {
+    // no drawing - skipping
+    if (!isDrawing.current) {
+      return;
+    }
+
+    const stage = e.target.getStage();
+    const point = stage.getPointerPosition();
+
+    let lastLine = lines[lines.length - 1];
+
+    // add point
+    lastLine.points = lastLine.points.concat([point.x, point.y]);
+
+    // replace last
+    lines.splice(lines.length - 1, 1, lastLine);
+
+    setLines(lines.concat());
+  };
+
+  const handleMouseUp = () => {
+    isDrawing.current = false;
+  };
+
+  return (
+    <div>
+      <Stage
+        width={window.innerWidth}
+        height={window.innerHeight}
+        onMouseDown={handleMouseDown}
+        onMousemove={handleMouseMove}
+        onMouseup={handleMouseUp}
+      >
+        <Layer>
+          {lines.map((line, i) => (
+            <Line
+              key={i}
+              points={line.points}
+              stroke="#df4b26"
+              strokeWidth={5}
+              tension={0.5}
+              lineCap="round"
+              globalCompositeOperation="source-over"
+            />
+          ))}
+        </Layer>
+      </Stage>
+    </div>
+  );
+};
