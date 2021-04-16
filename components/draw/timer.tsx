@@ -23,8 +23,6 @@ export default function Timer({ socket }: Props) {
 
     return () => {
       socket.off("TIME", handleTimer);
-
-      socket.disconnect();
     };
   }, [socket]);
 
