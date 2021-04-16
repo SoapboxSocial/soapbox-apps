@@ -11,6 +11,7 @@
     "@harelpls/use-pusher": "^7.2.1",
     "@roomservice/react": "^1.0.6",
     "@soapboxsocial/minis.js": "^2.2.1",
+    "body-scroll-lock": "^3.1.5",
     "classnames": "^2.2.6",
     "dompurify": "^2.2.7",
     "framer-motion": "^4.1.3",
