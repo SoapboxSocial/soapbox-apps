@@ -1,12 +1,6 @@
 import classNames from "classnames";
-import {
-  ChangeEvent,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useState,
-} from "react";
-import { Droplet, Trash2 } from "react-feather";
+import { ChangeEvent, Dispatch, ReactNode, SetStateAction } from "react";
+import { Trash2 } from "react-feather";
 
 function ToolButton({
   isActive,
@@ -41,12 +35,8 @@ function ColorInput({
 }: {
   setColor: Dispatch<SetStateAction<string>>;
 }) {
-  const [displayColor, displayColorSet] = useState("#000000");
-
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-
-    displayColorSet(value);
 
     setColor(value);
   };
@@ -63,7 +53,21 @@ function ColorInput({
         type="color"
       />
 
-      <Droplet fill={displayColor} />
+      <div className="h-6 w-6 rounded-full conic-rainbow border-2 bg-systemGrey6-dark dark:bg-white" />
+
+      <style jsx>{`
+        .conic-rainbow {
+          background: conic-gradient(
+            red,
+            yellow,
+            lime,
+            aqua,
+            blue,
+            magenta,
+            red
+          );
+        }
+      `}</style>
     </label>
   );
 }
