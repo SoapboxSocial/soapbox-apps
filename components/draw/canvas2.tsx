@@ -1,3 +1,4 @@
+import type Konva from "konva";
 import { KonvaEventObject } from "konva/types/Node";
 import { useEffect, useRef, useState } from "react";
 import { Layer, Line, Stage } from "react-konva";
@@ -44,6 +45,10 @@ export default function Canvas2({
   const isDrawing = useRef(false);
 
   useEffect(() => {
+    setLines([]);
+  }, [canvasTimestamp]);
+
+  useEffect(() => {
     if (typeof oldDrawOperations === "undefined") {
       return;
     }
@@ -52,10 +57,6 @@ export default function Canvas2({
 
     setLines(oldDrawOperations);
   }, [oldDrawOperations]);
-
-  useEffect(() => {
-    setLines([]);
-  }, [canvasTimestamp]);
 
   useEffect(() => {
     if (!disabled || typeof drawOperation === "undefined") {
