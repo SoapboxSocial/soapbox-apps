@@ -112,7 +112,9 @@ export default function DrawView() {
     [socket]
   );
 
-  const [drawOperation, drawOperationSet] = useState<CanvasOperation>();
+  const [drawOperation, drawOperationSet] = useState<
+    CanvasOperation | undefined
+  >();
   const handleDrawOperation = useCallback((data: CanvasOperation) => {
     drawOperationSet(data);
   }, []);
@@ -128,6 +130,7 @@ export default function DrawView() {
   const handleUpdateCanvas = useCallback(
     (data: { canvasTimestamp: number }) => {
       oldDrawOperationsSet([]);
+      drawOperationSet(undefined);
 
       canvasTimestampSet(data.canvasTimestamp);
     },

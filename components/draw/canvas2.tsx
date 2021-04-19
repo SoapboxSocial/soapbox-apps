@@ -1,4 +1,3 @@
-import type Konva from "konva";
 import { KonvaEventObject } from "konva/types/Node";
 import { useEffect, useRef, useState } from "react";
 import { Layer, Line, Stage } from "react-konva";
@@ -25,6 +24,10 @@ export type CanvasOperation = {
   stroke: string;
   strokeWidth: number;
 };
+
+function isCanvasOperation(line: any): line is CanvasOperation {
+  return typeof line === "object" && "points" in line;
+}
 
 type DrawEvent =
   | KonvaEventObject<TouchEvent>
@@ -123,7 +126,7 @@ export default function Canvas2({
           onTouchEnd={disabled ? undefined : endDraw}
         >
           <Layer>
-            {lines?.map((line, i) => (
+            {lines?.filter(isCanvasOperation).map((line, i) => (
               <Line
                 globalCompositeOperation="source-over"
                 key={i}
