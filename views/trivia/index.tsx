@@ -4,9 +4,8 @@ import cn from "classnames";
 import DOMPurify from "dompurify";
 import { motion } from "framer-motion";
 import shuffle from "lodash.shuffle";
-import type { Channel, PresenceChannel } from "pusher-js";
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { useInterval, useWindowSize } from "react-use";
+import { useWindowSize } from "react-use";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
 import {
@@ -16,7 +15,7 @@ import {
   useTriviaCategories,
 } from "../../hooks";
 import LoadingView from "../loading";
-import type { Question, Vote, DifficultyOptions } from "./types";
+import type { DifficultyOptions, Question, Vote } from "./types";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
