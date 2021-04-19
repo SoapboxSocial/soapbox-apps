@@ -1,78 +1,87 @@
-import { useChannel, useEvent, usePusher } from "@harelpls/use-pusher";
 import { getMembers, onClose, User } from "@soapboxsocial/minis.js";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "react-feather";
-import useSWR from "swr";
+import { io, Socket } from "socket.io-client";
 import { CircleIconButton } from "../../components/inputs/button";
 import Spinner from "../../components/spinner";
-import { useParams, useSoapboxRoomId } from "../../hooks";
+import { SERVER_BASE } from "../../constants";
+import { useParams, useSession, useSoapboxRoomId } from "../../hooks";
 
-const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
+interface RandomEmitEvents {
+  SEND_MEMBERS: (members: User[]) => void;
+}
 
-const getRandomMember = async (_: string, roomID: string) => {
-  try {
-    const members = await getMembers();
+interface RandomListenEvents {
+  MEMBER: (data: User | null) => void;
+}
 
-    await fetch(`${SERVER_BASE}/random/${roomID}/choose-member`, {
-      method: "POST",
-      body: JSON.stringify({ members: members }),
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error(error);
-  }
-};
+export function useSocket() {
+  const soapboxRoomId = useSoapboxRoomId();
 
-function useRandomMember(roomID: string, isAppOpener: boolean) {
-  const shouldFetch =
-    typeof window !== "undefined" &&
-    typeof roomID === "string" &&
-    isAppOpener === true;
+  const ref = useRef<Socket<RandomListenEvents, RandomEmitEvents>>();
 
-  return useSWR(
-    shouldFetch ? ["RandomMember", roomID] : null,
-    getRandomMember,
-    {
-      refreshWhenHidden: false,
-      refreshWhenOffline: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
+  useEffect(() => {
+    if (typeof soapboxRoomId === "string") {
+      ref.current = io(`${SERVER_BASE}/random`, {
+        query: {
+          roomID: soapboxRoomId,
+        },
+      });
     }
-  );
+  }, [soapboxRoomId]);
+
+  return ref.current;
 }
 
 export default function RandomView() {
+  const user = useSession();
+
   const { isAppOpener } = useParams();
 
   const soapboxRoomId = useSoapboxRoomId();
-  const channelName = `mini-random-${soapboxRoomId}`;
 
-  const { client } = usePusher();
-  const channel = useChannel(channelName);
+  const socket = useSocket();
 
-  const { revalidate, isValidating } = useRandomMember(
-    soapboxRoomId,
-    isAppOpener
-  );
-
-  /**
-   * 'member' Event Handling
-   */
   const [member, memberSet] = useState<User>();
+  const handleMember = useCallback((data: User) => {
+    memberSet(data);
+  }, []);
 
-  useEvent(channel, "member", (data: { member: User }) => {
-    console.log("Received 'member' event with payload", data);
+  const emitSendMembers = useCallback(async () => {
+    const members = await getMembers();
 
-    memberSet(data.member);
-  });
+    socket.emit("SEND_MEMBERS", members);
+  }, [socket]);
+
+  useEffect(() => {
+    if (!socket || !user) {
+      return;
+    }
+
+    socket.on("MEMBER", handleMember);
+
+    return () => {
+      socket.off("MEMBER", handleMember);
+
+      socket.disconnect();
+    };
+  }, [user, socket]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    if (isAppOpener) {
+      emitSendMembers();
+    }
+  }, [socket, isAppOpener, emitSendMembers]);
 
   useEffect(() => {
     if (soapboxRoomId) {
       onClose(() => {
         memberSet(null);
-
-        client?.disconnect();
       });
     }
   }, [soapboxRoomId]);
@@ -82,10 +91,9 @@ export default function RandomView() {
       {isAppOpener && (
         <div className="absolute top-4 right-4">
           <CircleIconButton
-            loading={isValidating}
             type="button"
             icon={<RefreshCw size={20} />}
-            onClick={revalidate}
+            onClick={emitSendMembers}
           />
         </div>
       )}
