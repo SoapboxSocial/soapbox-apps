@@ -1,85 +1,149 @@
-import { useMap, usePresence } from "@roomservice/react";
-import { onClose } from "@soapboxsocial/minis.js";
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useSoapboxRoomId } from "../../hooks";
+import { onClose, User } from "@soapboxsocial/minis.js";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { io, Socket } from "socket.io-client";
+import { SERVER_BASE } from "../../constants";
+import { useParams, useSession, useSoapboxRoomId } from "../../hooks";
 import LoadingView from "../loading";
 import CreatePollForm from "./createPollForm";
 
-type PollOption = {
+export type PollOption = {
   label: string;
   value: string;
 };
 
-type PollsMap = {
-  options?: PollOption[];
-  votes?: PollOption[];
-};
+interface PollsListenEvents {
+  VOTES: (votes: PollOption[]) => void;
+  OPTIONS: (options: PollOption[]) => void;
+}
 
-type Props = {
-  userID: string;
-};
+interface PollsEmitEvents {
+  CLOSE_GAME: () => void;
+  JOIN_GAME: (user: User) => void;
+  VOTE: (vote: PollOption) => void;
+  SET_OPTIONS: (options: PollOption[]) => void;
+  NEW_POLL: () => void;
+}
 
-export default function PollsView({}: Props) {
+export function useSocket() {
   const soapboxRoomId = useSoapboxRoomId();
+
+  const ref = useRef<Socket<PollsListenEvents, PollsEmitEvents>>();
+
+  useEffect(() => {
+    if (typeof soapboxRoomId === "string") {
+      ref.current = io(`${SERVER_BASE}/polls`, {
+        query: {
+          roomID: soapboxRoomId,
+        },
+      });
+    }
+  }, [soapboxRoomId]);
+
+  return ref.current;
+}
+
+export default function PollsView() {
+  const user = useSession();
+
   const { isAppOpener } = useParams();
 
-  const roomServiceRoomName = `soapbox-mini-polls-${soapboxRoomId}`;
+  const soapboxRoomId = useSoapboxRoomId();
 
-  const [poll, map] = useMap<PollsMap>(
-    roomServiceRoomName,
-    `${roomServiceRoomName}-poll`
+  const socket = useSocket();
+
+  const [options, optionsSet] = useState<PollOption[]>();
+  const handleOptions = useCallback((data: PollOption[]) => {
+    console.log("OPTIONS", data);
+
+    optionsSet(data);
+  }, []);
+
+  const [votes, votesSet] = useState<PollOption[]>([]);
+  const handleVotes = useCallback((data: PollOption[]) => {
+    console.log("VOTES", data);
+
+    votesSet(data);
+  }, []);
+
+  const emitSendOptions = useCallback(
+    (options: PollOption[]) => {
+      socket.emit("SET_OPTIONS", options);
+    },
+    [socket]
   );
+
+  const emitNewPoll = useCallback(() => {
+    socket.emit("NEW_POLL");
+  }, [socket]);
 
   const [hasVoted, hasVotedSet] = useState(false);
 
-  const [voted, votedClient] = usePresence<boolean>(
-    roomServiceRoomName,
-    `${roomServiceRoomName}-voted`
-  );
-
-  const voteOnPoll = (option: PollOption) => () => {
-    const curVotes = poll?.votes ? poll.votes : [];
-
-    map.set("votes", [...curVotes, option]);
-
-    votedClient.set(true);
-
-    hasVotedSet(true);
-  };
-
   useEffect(() => {
     hasVotedSet(false);
-  }, [poll.options]);
+  }, [options]);
 
-  const deletePoll = () => {
-    map?.delete("votes");
-    map?.delete("options");
-    hasVotedSet(false);
-  };
+  const emitVote = useCallback(
+    (vote: PollOption) => {
+      return () => {
+        socket.emit("VOTE", vote);
 
-  useEffect(() => {
-    onClose(deletePoll);
-  }, []);
-
-  const votesCount = poll?.votes?.length ?? 0;
-
-  const formattedVotesCount = useMemo(
-    () =>
-      votesCount > 1 || votesCount === 0
-        ? `${votesCount} votes`
-        : `${votesCount} vote`,
-    [votesCount]
+        hasVotedSet(true);
+      };
+    },
+    [socket]
   );
 
-  if (!poll?.options && isAppOpener)
-    return <CreatePollForm roomServiceRoomName={roomServiceRoomName} />;
+  useEffect(() => {
+    if (!socket || !user) {
+      return;
+    }
 
-  if (poll?.options)
+    socket.emit("JOIN_GAME", user);
+
+    socket.on("OPTIONS", handleOptions);
+    socket.on("VOTES", handleVotes);
+
+    return () => {
+      socket.off("OPTIONS", handleOptions);
+      socket.off("VOTES", handleVotes);
+
+      socket.disconnect();
+    };
+  }, [user, socket]);
+
+  /**
+   * Derived Values
+   */
+  const votesCount = useMemo(() => votes?.length ?? 0, [votes]);
+
+  const formattedVotesCount = useMemo(() => {
+    if (votesCount > 1 || votesCount === 0) {
+      return `${votesCount} votes`;
+    }
+
+    return `${votesCount} vote`;
+  }, [votesCount]);
+
+  /**
+   * Close Mini
+   */
+  useEffect(() => {
+    if (soapboxRoomId && socket) {
+      onClose(() => {
+        socket.emit("CLOSE_GAME");
+      });
+    }
+  }, [soapboxRoomId, socket]);
+
+  if (!options && isAppOpener)
+    return <CreatePollForm emitSendOptions={emitSendOptions} />;
+
+  if (!!options)
     return (
       <main className="flex flex-col min-h-screen">
         <ul className="flex-1 pt-4 px-4 space-y-4">
-          {poll.options.map((option: PollOption, i) => {
-            const optionVotes = poll?.votes?.filter(
+          {options.map((option: PollOption, i) => {
+            const optionVotes = votes?.filter(
               (vote) => vote.label === option.label
             ).length;
 
@@ -95,7 +159,7 @@ export default function PollsView({}: Props) {
               <li key={i}>
                 <button
                   className="w-full py-4 px-5 text-title3 bg-white dark:bg-systemGrey6-dark rounded flex justify-between focus:outline-none focus:ring-4"
-                  onClick={voteOnPoll(option)}
+                  onClick={emitVote(option)}
                   disabled={hasVoted}
                 >
                   <p className="leading-none">{option.value}</p>
@@ -110,7 +174,7 @@ export default function PollsView({}: Props) {
           <div className="secondary">{formattedVotesCount}</div>
 
           {isAppOpener && (
-            <button className="text-soapbox font-medium" onClick={deletePoll}>
+            <button className="text-soapbox font-medium" onClick={emitNewPoll}>
               New Poll
             </button>
           )}

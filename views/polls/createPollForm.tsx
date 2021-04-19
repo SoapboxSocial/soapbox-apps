@@ -1,17 +1,15 @@
-import { useMap } from "@roomservice/react";
 import { useState } from "react";
 import { Plus } from "react-feather";
 import { useForm } from "react-hook-form";
+import { PollOption } from ".";
 import Button, { CircleIconButton } from "../../components/inputs/button";
 import Input from "../../components/inputs/input";
 
-export default function CreatePollForm({
-  roomServiceRoomName,
-}: {
-  roomServiceRoomName: string;
-}) {
-  const [, map] = useMap(roomServiceRoomName, `${roomServiceRoomName}-poll`);
+type Props = {
+  emitSendOptions: (options: PollOption[]) => void;
+};
 
+export default function CreatePollForm({ emitSendOptions }: Props) {
   const [pollOptions, pollOptionsSet] = useState(2);
 
   const addChoice = () => pollOptionsSet((num) => num + 1);
@@ -26,7 +24,7 @@ export default function CreatePollForm({
         value: val,
       }));
 
-      map.set("options", options);
+      emitSendOptions(options);
     } catch (err) {
       console.error(err);
     }
