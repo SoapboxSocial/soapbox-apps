@@ -3,7 +3,7 @@ module.exports = {
     return [
       {
         source: "/birds",
-        destination: "https://birds-k74q3.ondigitalocean.app/birds",
+        destination: "https://birds-ufb5n.ondigitalocean.app/birds",
         permanent: false,
       },
     ];
