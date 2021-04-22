@@ -9,11 +9,10 @@ import ChooseWordPanel from "../../components/draw/chooseWordPanel";
 import GuessToolbar from "../../components/draw/guessToolbar";
 import Timer from "../../components/draw/timer";
 import Spinner from "../../components/spinner";
+import { SERVER_BASE } from "../../constants";
 import { useSession, useSoapboxRoomId } from "../../hooks";
 import isEqual from "../../lib/isEqual";
 import obfuscateWord from "../../lib/obfuscateWord";
-
-const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
 type Painter = {
   id: string;

@@ -8,6 +8,7 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useWindowSize } from "react-use";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
+import { SERVER_BASE } from "../../constants";
 import {
   useParams,
   useSession,
@@ -16,8 +17,6 @@ import {
 } from "../../hooks";
 import LoadingView from "../loading";
 import type { DifficultyOptions, Question, Vote } from "./types";
-
-const SERVER_BASE = process.env.NEXT_PUBLIC_APPS_SERVER_BASE_URL as string;
 
 export default function TriviaView() {
   const user = useSession();
