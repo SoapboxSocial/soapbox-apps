@@ -53,7 +53,7 @@ function useSocket() {
 
   useEffect(() => {
     if (typeof soapboxRoomId === "string") {
-      ref.current = io(SERVER_BASE, {
+      ref.current = io(`${SERVER_BASE}/draw`, {
         query: {
           roomID: soapboxRoomId,
         },
