@@ -1,11 +1,18 @@
-import { useChannel, useEvent, usePusher } from "@harelpls/use-pusher";
 import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
 import { motion } from "framer-motion";
 import shuffle from "lodash.shuffle";
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useWindowSize } from "react-use";
+import { io, Socket } from "socket.io-client";
 import Button from "../../components/inputs/button";
 import Select from "../../components/inputs/select";
 import { SERVER_BASE } from "../../constants";
@@ -16,52 +23,61 @@ import {
   useTriviaCategories,
 } from "../../hooks";
 import LoadingView from "../loading";
-import type { DifficultyOptions, Question, Vote } from "./types";
+import type { DifficultyOptions, Question, Score, Vote } from "./types";
+
+interface TriviaEmitEvents {
+  START_ROUND: (category: string, difficulty: DifficultyOptions) => void;
+  CLOSE_GAME: () => void;
+  VOTE: (vote: Vote) => void;
+}
+
+interface TriviaListenEvents {
+  VOTES: (votes: Vote[]) => void;
+  QUESTION: (question: Question | null) => void;
+  REVEAL: () => void;
+  SCORES: (scores: { display_name: string; score: number }[]) => void;
+}
+
+export function useSocket() {
+  const soapboxRoomId = useSoapboxRoomId();
+
+  const ref = useRef<Socket<TriviaListenEvents, TriviaEmitEvents>>();
+
+  useEffect(() => {
+    if (typeof soapboxRoomId === "string") {
+      ref.current = io(`${SERVER_BASE}/trivia`, {
+        query: {
+          roomID: soapboxRoomId,
+        },
+      });
+    }
+  }, [soapboxRoomId]);
+
+  return ref.current;
+}
 
 export default function TriviaView() {
   const user = useSession();
+
   const { isAppOpener } = useParams();
 
   const soapboxRoomId = useSoapboxRoomId();
-  const channelName = `mini-trivia-${soapboxRoomId}`;
 
-  const { client } = usePusher();
-  const channel = useChannel(channelName);
+  const socket = useSocket();
 
   const categories = useTriviaCategories();
-
-  const [category, categorySet] = useState<string>("all");
-  const handleCategorySelect = (event: ChangeEvent<HTMLSelectElement>) =>
-    categorySet(event.target.value);
-
-  const [difficulty, difficultySet] = useState<DifficultyOptions>("any");
-  const handleDifficultySelect = (event: ChangeEvent<HTMLSelectElement>) =>
-    difficultySet(event.target.value as DifficultyOptions);
-
-  const init = useCallback(async () => {
-    console.log("[init]");
-
-    try {
-      await fetch(
-        `${SERVER_BASE}/trivia/${soapboxRoomId}/setup?category=${category}&difficulty=${difficulty}`
-      );
-    } catch (error) {
-      console.error(error);
-    }
-  }, [category, difficulty, soapboxRoomId]);
 
   /**
    * 'question' Event Handling
    */
   const [activeQuestion, activeQuestionSet] = useState<Question>();
-
-  useEvent(channel, "question", (data: { question: Question }) => {
+  const handleQuestion = useCallback((data: Question) => {
     console.log("Received 'question' event with payload", data);
 
-    activeQuestionSet(data.question);
-  });
+    activeQuestionSet(data);
+  }, []);
 
-  const questions = useMemo(() => {
+  const answers = useMemo(() => {
     if (activeQuestion)
       return shuffle([
         activeQuestion.correct_answer,
@@ -75,23 +91,21 @@ export default function TriviaView() {
    * 'vote' Event Handling
    */
   const [votes, votesSet] = useState<Vote[]>([]);
-
-  useEvent(channel, "vote", (data: { votes: Vote[] }) => {
+  const handleVotes = useCallback((data: Vote[]) => {
     console.log("Received 'vote' event with payload", data);
 
-    votesSet(data.votes);
-  });
+    votesSet(data);
+  }, []);
 
   /**
    * 'reveal' Event Handling
    */
   const [showAnswer, showAnswerSet] = useState(false);
-
-  useEvent(channel, "reveal", () => {
+  const handleReveal = useCallback(() => {
     console.log("Received 'reveal' event");
 
     showAnswerSet(true);
-  });
+  }, []);
 
   useEffect(() => {
     showAnswerSet(false);
@@ -100,19 +114,12 @@ export default function TriviaView() {
   /**
    * 'scores' Event Handling
    */
-  const [scores, scoresSet] = useState<
-    { display_name: string; score: number }[]
-  >();
+  const [scores, scoresSet] = useState<Score[]>();
+  const handleScores = useCallback((data: Score[]) => {
+    console.log("Received 'scores' event with payload", data);
 
-  useEvent(
-    channel,
-    "scores",
-    (data: { scores: { display_name: string; score: number }[] }) => {
-      console.log("Received 'scores' event with payload", data);
-
-      scoresSet(data.scores);
-    }
-  );
+    scoresSet(data);
+  }, []);
 
   /**
    * Voting Logic
@@ -123,42 +130,66 @@ export default function TriviaView() {
     if (typeof votedAnswer === "string") votedAnswerSet(null);
   }, [activeQuestion]);
 
-  const voteOnQuestion = (answer: string) => async () => {
-    votedAnswerSet(answer);
+  const emitVote = useCallback(
+    (answer: string) => {
+      return () => {
+        votedAnswerSet(answer);
 
-    await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/vote`, {
-      method: "POST",
-      body: JSON.stringify({ vote: { answer, user } }),
-      headers: { "Content-Type": "application/json" },
-    });
-  };
+        socket.emit("VOTE", { answer, user });
+      };
+    },
+    [socket]
+  );
+
+  const [category, categorySet] = useState<string>("all");
+  const handleCategorySelect = (event: ChangeEvent<HTMLSelectElement>) =>
+    categorySet(event.target.value);
+
+  const [difficulty, difficultySet] = useState<DifficultyOptions>("any");
+  const handleDifficultySelect = (event: ChangeEvent<HTMLSelectElement>) =>
+    difficultySet(event.target.value as DifficultyOptions);
+
+  const emitStartRound = useCallback(async () => {
+    socket.emit("START_ROUND", category, difficulty);
+  }, [socket, category, difficulty]);
+
+  useEffect(() => {
+    if (!socket || !user) {
+      return;
+    }
+
+    socket.on("QUESTION", handleQuestion);
+    socket.on("REVEAL", handleReveal);
+    socket.on("SCORES", handleScores);
+    socket.on("VOTES", handleVotes);
+
+    return () => {
+      socket.off("QUESTION", handleQuestion);
+      socket.off("REVEAL", handleReveal);
+      socket.off("SCORES", handleScores);
+      socket.off("VOTES", handleVotes);
+
+      socket.disconnect();
+    };
+  }, [user, socket]);
+
+  /**
+   * Derived Values
+   */
 
   const calcVoteCount = (answer: string) =>
     votes.filter((vote) => vote.answer === answer).length;
 
   /**
-   * Mini Cleanup
+   * Close Mini
    */
-  const [isMiniClosed, isMiniClosedSet] = useState(false);
-
   useEffect(() => {
-    if (soapboxRoomId && isAppOpener) {
-      onClose(async () => {
-        isMiniClosedSet(true);
-
-        activeQuestionSet(null);
-        categorySet("all");
-        scoresSet(null);
-        showAnswerSet(false);
-        votedAnswerSet(null);
-        votesSet([]);
-
-        await fetch(`${SERVER_BASE}/trivia/${soapboxRoomId}/reset`);
-
-        client?.disconnect();
+    if (soapboxRoomId && socket) {
+      onClose(() => {
+        socket.emit("CLOSE_GAME");
       });
     }
-  }, [soapboxRoomId, isAppOpener]);
+  }, [soapboxRoomId, socket]);
 
   if (!activeQuestion && isAppOpener && categories) {
     if (scores)
@@ -231,7 +262,7 @@ export default function TriviaView() {
           </div>
 
           <div className="pt-4">
-            <Button onClick={init}>Start a round</Button>
+            <Button onClick={emitStartRound}>Start a round</Button>
           </div>
         </div>
       </main>
@@ -253,19 +284,19 @@ export default function TriviaView() {
         </div>
 
         <div className="px-4 pb-4 space-y-2">
-          {questions.map((question) => (
+          {answers.map((answer) => (
             <TriviaButton
-              active={votedAnswer === question}
-              correct={question === activeQuestion.correct_answer}
+              active={votedAnswer === answer}
+              correct={answer === activeQuestion.correct_answer}
               disabled={showAnswer || votedAnswer}
-              key={question}
-              onClick={voteOnQuestion(question)}
+              key={answer}
+              onClick={emitVote(answer)}
               reveal={showAnswer}
-              voteCount={calcVoteCount(question)}
+              voteCount={calcVoteCount(answer)}
             >
               <span
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(question),
+                  __html: DOMPurify.sanitize(answer),
                 }}
               />
             </TriviaButton>
@@ -303,7 +334,7 @@ export default function TriviaView() {
       </main>
     );
 
-  return <LoadingView restartCallback={isMiniClosed ? init : null} />;
+  return <LoadingView />;
 }
 
 function Timer() {

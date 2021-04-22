@@ -1,3 +1,5 @@
+import { User } from "@soapboxsocial/minis.js";
+
 export type Question = {
   category: string;
   correct_answer: string;
@@ -13,3 +15,5 @@ export type Vote = {
 };
 
 export type DifficultyOptions = "any" | "easy" | "medium" | "hard";
+
+export type Score = { display_name: string; score: number };
