@@ -1,11 +1,10 @@
-import { useMap } from "@roomservice/react";
-import { onClose } from "@soapboxsocial/minis.js";
-import { useCallback, useEffect, useState } from "react";
+import { onClose, User } from "@soapboxsocial/minis.js";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight } from "react-feather";
+import { io, Socket } from "socket.io-client";
 import { CircleIconButton } from "../../components/inputs/button";
-import { useParams, useSoapboxRoomId } from "../../hooks";
-import getRandom from "../../lib/getRandom";
-import prompts from "../../would-you-rather.json";
+import { SERVER_BASE } from "../../constants";
+import { useParams, useSession, useSoapboxRoomId } from "../../hooks";
 import LoadingView from "../loading";
 import Prompt from "./prompt";
 
@@ -18,101 +17,123 @@ type WYRPair = {
   b: WYROption;
 };
 
-type WouldYouRatherMap = {
-  active: WYRPair;
-  votes?: WYROption[];
-  seen: WYRPair[];
-};
+interface WYREmitEvents {
+  JOIN_GAME: (user: User) => void;
+  VOTE: (vote: WYROption) => void;
+  NEW_PROMPT: () => void;
+  CLOSE_GAME: () => void;
+}
 
-export default function WouldYouRatherView() {
+interface WYRListenEvents {
+  VOTES: (votes: WYROption[]) => void;
+  PROMPT: (prompt: WYRPair | null) => void;
+}
+
+export function useSocket() {
   const soapboxRoomId = useSoapboxRoomId();
-  const { isAppOpener } = useParams();
 
-  const roomServiceRoomName = `soapbox-mini-wyr-${soapboxRoomId}`;
+  const ref = useRef<Socket<WYRListenEvents, WYREmitEvents>>();
 
-  const [wyr, map] = useMap<WouldYouRatherMap>(
-    roomServiceRoomName,
-    "wouldYouRather"
-  );
-
-  const [votedPromptText, votedPromptTextSet] = useState<string>(null);
-
-  const next = useCallback(() => {
-    map?.delete("votes");
-
-    let unseen = prompts;
-
-    if (wyr?.seen) {
-      console.log("Seen Prompts", wyr?.seen.length);
-
-      unseen = prompts.filter((_prompt) => {
-        if (wyr.seen.includes(_prompt)) {
-          return false;
-        }
-
-        return true;
+  useEffect(() => {
+    if (typeof soapboxRoomId === "string") {
+      ref.current = io(`${SERVER_BASE}/wyr`, {
+        query: {
+          roomID: soapboxRoomId,
+        },
       });
     }
+  }, [soapboxRoomId]);
 
-    console.log("Unseen Prompts", unseen.length);
+  return ref.current;
+}
 
-    const randomPrompt = unseen[getRandom(unseen.length)];
+export default function WouldYouRatherView() {
+  const user = useSession();
 
-    map?.set("active", randomPrompt);
+  const { isAppOpener } = useParams();
 
-    map?.set("seen", [...(wyr?.seen ? wyr.seen : []), randomPrompt]);
-  }, [map, wyr.seen]);
+  const soapboxRoomId = useSoapboxRoomId();
 
-  useEffect(() => {
-    if (isAppOpener) {
-      console.log("Setup App");
+  const socket = useSocket();
 
-      next();
-    }
-  }, [map]);
+  const [prompt, promptSet] = useState<WYRPair>();
+  const handlePrompt = useCallback((data: WYRPair) => {
+    console.log("PROMPT", data);
 
-  useEffect(() => {
-    if (typeof votedPromptText === "string") votedPromptTextSet(null);
-  }, [wyr.active]);
-
-  const [isMiniClosed, isMiniClosedSet] = useState(false);
-
-  const setupMini = () => {
-    map?.delete("seen");
-    map?.delete("active");
-    map?.delete("votes");
-
-    next();
-  };
-
-  useEffect(() => {
-    onClose(() => {
-      map?.delete("seen");
-      map?.delete("active");
-      map?.delete("votes");
-
-      isMiniClosedSet(true);
-    });
+    promptSet(data);
   }, []);
 
-  const votesCount = wyr?.votes?.length ?? 0;
+  const [votes, votesSet] = useState<WYROption[]>([]);
+  const handleVotes = useCallback((data: WYROption[]) => {
+    console.log("VOTES", data);
+
+    votesSet(data);
+  }, []);
+
+  const emitNewPrompt = useCallback(() => {
+    socket.emit("NEW_PROMPT");
+  }, [socket]);
+
+  const [votedPromptText, votedPromptTextSet] = useState<string>();
+
+  useEffect(() => {
+    votedPromptTextSet(null);
+  }, [prompt]);
+
+  const emitVote = useCallback(
+    (option: WYROption) => {
+      return () => {
+        socket.emit("VOTE", option);
+
+        votedPromptTextSet(option.text);
+      };
+    },
+    [socket]
+  );
+
+  useEffect(() => {
+    if (!socket || !user) {
+      return;
+    }
+
+    socket.emit("JOIN_GAME", user);
+
+    socket.on("PROMPT", handlePrompt);
+    socket.on("VOTES", handleVotes);
+
+    return () => {
+      socket.off("PROMPT", handlePrompt);
+      socket.off("VOTES", handleVotes);
+
+      socket.disconnect();
+    };
+  }, [user, socket]);
+
+  /**
+   * Derived Values
+   */
+
+  const votesCount = votes.length;
 
   const calcVotePercent = (option: WYROption) => {
-    const optionVotes = wyr?.votes?.filter((vote) => vote.text === option.text)
+    const optionVotes = votes?.filter((vote) => vote.text === option.text)
       .length;
 
     return votesCount > 0 ? optionVotes / votesCount : 0;
   };
 
-  const voteOnOption = (option: WYROption) => () => {
-    const currentVotes = wyr?.votes ? wyr.votes : [];
+  /**
+   * Close Mini
+   */
+  useEffect(() => {
+    if (soapboxRoomId && socket) {
+      onClose(() => {
+        socket.emit("CLOSE_GAME");
+      });
+    }
+  }, [soapboxRoomId, socket]);
 
-    map.set("votes", [...currentVotes, option]);
-
-    votedPromptTextSet(option.text);
-  };
-
-  if (wyr?.active)
+  if (prompt)
     return (
       <main className="flex flex-col min-h-screen select-none">
         <div className="pt-4 px-4">
@@ -125,7 +146,7 @@ export default function WouldYouRatherView() {
               <div className="absolute right-0 top-1/2 transform-gpu -translate-y-1/2">
                 <CircleIconButton
                   icon={<ArrowRight size={20} />}
-                  onClick={next}
+                  onClick={emitNewPrompt}
                 />
               </div>
             )}
@@ -134,13 +155,13 @@ export default function WouldYouRatherView() {
 
         <div className="flex-1 p-4 flex flex-col">
           <Prompt
-            active={votedPromptText === wyr.active.a.text}
+            active={votedPromptText === prompt.a.text}
             className="bg-accent-pink"
             ringColor="ring-accent-pink"
             disabled={Boolean(votedPromptText)}
-            onClick={voteOnOption(wyr.active.a)}
-            percent={calcVotePercent(wyr.active.a)}
-            text={wyr.active.a.text}
+            onClick={emitVote(prompt.a)}
+            percent={calcVotePercent(prompt.a)}
+            text={prompt.a.text}
           />
 
           <div className="flex-grow-0 mx-auto -my-4 text-center h-12 w-12 flex items-center justify-center rounded-full bg-systemGrey6-light dark:bg-black text-primary leading-none font-bold z-50 pointer-events-none select-none">
@@ -148,17 +169,17 @@ export default function WouldYouRatherView() {
           </div>
 
           <Prompt
-            active={votedPromptText === wyr.active.b.text}
+            active={votedPromptText === prompt.b.text}
             className="bg-accent-cyan"
             ringColor="ring-accent-cyan"
             disabled={Boolean(votedPromptText)}
-            onClick={voteOnOption(wyr.active.b)}
-            percent={calcVotePercent(wyr.active.b)}
-            text={wyr.active.b.text}
+            onClick={emitVote(prompt.b)}
+            percent={calcVotePercent(prompt.b)}
+            text={prompt.b.text}
           />
         </div>
       </main>
     );
 
-  return <LoadingView restartCallback={isMiniClosed ? setupMini : null} />;
+  return <LoadingView />;
 }
