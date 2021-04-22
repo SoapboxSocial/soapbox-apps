@@ -149,7 +149,7 @@ export default function TriviaView() {
   const handleDifficultySelect = (event: ChangeEvent<HTMLSelectElement>) =>
     difficultySet(event.target.value as DifficultyOptions);
 
-  const emitStartRound = useCallback(async () => {
+  const emitStartRound = useCallback(() => {
     socket.emit("START_ROUND", category, difficulty);
   }, [socket, category, difficulty]);
 
