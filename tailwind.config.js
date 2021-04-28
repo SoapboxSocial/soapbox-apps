@@ -8,6 +8,9 @@ module.exports = {
       full: "9999px",
     },
     extend: {
+      fontFamily: {
+        "mini-pixel": ["Mini Pixel", "monospace"],
+      },
       colors: {
         soapbox: "#8359fe",
         accent: {
