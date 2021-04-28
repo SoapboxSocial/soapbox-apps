@@ -1,3 +1,5 @@
+import { User } from "@soapboxsocial/minis.js";
+
 export enum PlayerStatus {
   ALIVE = "ALIVE",
   DEAD = "DEAD",
@@ -11,6 +13,15 @@ export enum PlayerRole {
   VILLAGER = "VILLAGER",
 }
 
+export enum GameAct {
+  DAY = "DAY",
+  WEREWOLF = "WEREWOLF",
+  SEER = "SEER",
+  DOCTOR = "DOCTOR",
+  VILLAGER = "VILLAGER",
+  NIGHT = "NIGHT",
+}
+
 export type Player = {
   role: PlayerRole;
   status: PlayerStatus;
@@ -20,12 +31,14 @@ export type Player = {
 export interface WerewolfListenEvents {
   TIME: (timeLeft: number) => void;
   PLAYERS: (players: { [key: string]: Player }) => void;
-  ACT: (act: "NIGHT" | "DAY") => void;
-  WAKE: (role: "WEREWOLF" | "DOCTOR" | "SEER") => void;
-  SLEEP: (role: "WEREWOLF" | "DOCTOR" | "SEER") => void;
+  PLAYER: (player: Player) => void;
+  ACT: (act: GameAct) => void;
 }
 
 export interface WerewolfEmitEvents {
   CLOSE_GAME: () => void;
   JOIN_GAME: ({ user }: { user: User }) => void;
+  KILL: (id: string) => void;
+  HEAL: (id: string) => void;
+  SCRY: (id: string) => void;
 }
