@@ -1,40 +1,23 @@
 import { onClose } from "@soapboxsocial/minis.js";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
-import { SERVER_BASE } from "../../constants";
-import { useSession, useSoapboxRoomId } from "../../hooks";
+import { useCallback, useEffect, useState } from "react";
+import { useSession, useSoapboxRoomId, useSocket } from "../../hooks";
 import {
   GameAct,
   Player,
   PlayerRole,
+  ScryResult,
   WerewolfEmitEvents,
   WerewolfListenEvents,
 } from "./shared";
-
-function useSocket() {
-  const soapboxRoomId = useSoapboxRoomId();
-
-  const ref = useRef<Socket<WerewolfListenEvents, WerewolfEmitEvents>>();
-
-  useEffect(() => {
-    if (typeof soapboxRoomId === "string") {
-      ref.current = io(`${SERVER_BASE}/werewolf`, {
-        query: {
-          roomID: soapboxRoomId,
-        },
-      });
-    }
-  }, [soapboxRoomId]);
-
-  return ref.current;
-}
 
 export default function WerewolfView() {
   const user = useSession();
 
   const soapboxRoomId = useSoapboxRoomId();
 
-  const socket = useSocket();
+  const socket = useSocket<WerewolfListenEvents, WerewolfEmitEvents>(
+    "werewolf"
+  );
 
   const [players, playersSet] = useState<{ [key: string]: Player }>({});
   const handlePlayers = useCallback((data: { [key: string]: Player }) => {
@@ -51,7 +34,13 @@ export default function WerewolfView() {
   const [player, playerSet] = useState<Player>();
   const handlePlayer = useCallback((data: Player) => {
     console.log("Received 'PLAYER' event", data);
-    playerSet(player);
+    playerSet(data);
+  }, []);
+
+  const [scryResult, scryResultSet] = useState<ScryResult>();
+  const handleScryResult = useCallback((data: ScryResult) => {
+    console.log("Received 'SCRY_RESULT' event", data);
+    scryResultSet(data);
   }, []);
 
   /**
@@ -62,16 +51,18 @@ export default function WerewolfView() {
       return;
     }
 
-    socket.emit("JOIN_GAME", { user });
+    socket.emit("JOIN_GAME", user);
 
     socket.on("PLAYERS", handlePlayers);
     socket.on("PLAYER", handlePlayer);
     socket.on("ACT", handleAct);
+    socket.on("SCRY_RESULT", handleScryResult);
 
     return () => {
       socket.off("PLAYERS", handlePlayers);
       socket.off("PLAYER", handlePlayer);
       socket.off("ACT", handleAct);
+      socket.off("SCRY_RESULT", handleScryResult);
 
       socket.disconnect();
     };
@@ -119,6 +110,17 @@ export default function WerewolfView() {
     [socket]
   );
 
+  const emitVoteEvent = useCallback(
+    (id: string) => {
+      return () => {
+        if (typeof id === "undefined") {
+          return;
+        }
+      };
+    },
+    [socket]
+  );
+
   /**
    * Close Mini
    */
@@ -137,14 +139,17 @@ export default function WerewolfView() {
 
   return (
     <main className="flex flex-col min-h-screen select-none relative">
-      <Stage
-        act={act}
-        role={player?.role}
-        players={players}
-        emitKillEvent={emitKillEvent}
-        emitHealEvent={emitHealEvent}
-        emitScryEvent={emitScryEvent}
-      />
+      {!waitingForPlayers && (
+        <Stage
+          act={act}
+          role={player?.role}
+          scryResult={scryResult}
+          players={players}
+          emitKillEvent={emitKillEvent}
+          emitHealEvent={emitHealEvent}
+          emitScryEvent={emitScryEvent}
+        />
+      )}
 
       {waitingForPlayers && <Lobby players={players} />}
     </main>
@@ -155,12 +160,14 @@ function Stage({
   act,
   role,
   players,
+  scryResult,
   emitKillEvent,
   emitHealEvent,
   emitScryEvent,
 }: {
   act?: GameAct;
   role?: PlayerRole;
+  scryResult?: ScryResult;
   players: { [key: string]: Player };
   emitKillEvent: (id: string) => () => void;
   emitHealEvent: (id: string) => () => void;
@@ -168,8 +175,8 @@ function Stage({
 }) {
   if (act === GameAct.NIGHT) {
     return (
-      <div className="p-4">
-        <p className="text-center">night decends...</p>
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <p className="text-center">night descends...</p>
       </div>
     );
   }
@@ -177,15 +184,24 @@ function Stage({
   if (act === GameAct.WEREWOLF) {
     if (role === PlayerRole.WEREWOLF)
       return (
-        <div className="p-4">
+        <div className="flex-1 p-4 flex flex-col items-center justify-center">
           <p className="text-center">you are a werewolf</p>
+
+          <p className="text-center">who would you like to kill?</p>
 
           <PlayerList players={players} onClick={emitKillEvent} />
         </div>
       );
 
     return (
-      <div className="p-4">
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <img
+          className="image-rendering-pixelated"
+          src="/werewolf/wolf.png"
+          alt=""
+          aria-hidden
+        />
+
         <p className="text-center">the werewolves are hunting</p>
       </div>
     );
@@ -194,15 +210,24 @@ function Stage({
   if (act === GameAct.DOCTOR) {
     if (role === PlayerRole.DOCTOR)
       return (
-        <div className="p-4">
+        <div className="flex-1 p-4 flex flex-col items-center justify-center">
           <p className="text-center">you are the doctor</p>
+
+          <p className="text-center">who would you like to heal?</p>
 
           <PlayerList players={players} onClick={emitHealEvent} />
         </div>
       );
 
     return (
-      <div className="p-4">
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <img
+          className="image-rendering-pixelated"
+          src="/werewolf/doctor.png"
+          alt=""
+          aria-hidden
+        />
+
         <p className="text-center">the doctor awakens</p>
       </div>
     );
@@ -211,15 +236,28 @@ function Stage({
   if (act === GameAct.SEER) {
     if (role === PlayerRole.SEER)
       return (
-        <div className="p-4">
+        <div className="flex-1 p-4 flex flex-col items-center justify-center">
           <p className="text-center">you are the seer</p>
 
-          <PlayerList players={players} onClick={emitScryEvent} />
+          <p className="text-center">who would you like to ask about?</p>
+
+          <PlayerList
+            scryResult={scryResult}
+            players={players}
+            onClick={emitScryEvent}
+          />
         </div>
       );
 
     return (
-      <div className="p-4">
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <img
+          className="image-rendering-pixelated"
+          src="/werewolf/seer.png"
+          alt=""
+          aria-hidden
+        />
+
         <p className="text-center">the seer awakens</p>
       </div>
     );
@@ -227,17 +265,23 @@ function Stage({
 
   if (act === GameAct.DAY) {
     return (
-      <div className="p-4">
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
         <p className="text-center">daybreak comes...</p>
       </div>
     );
   }
 
-  return (
-    <div className="p-4">
-      <p className="text-center">NO ACT SET</p>
-    </div>
-  );
+  if (act === GameAct.VOTING) {
+    return (
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <p className="text-center">who do you think is a werewolf?</p>
+
+        <PlayerList players={players} onClick={emitScryEvent} />
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function Lobby({ players }: { players: { [key: string]: Player } }) {
@@ -245,11 +289,16 @@ function Lobby({ players }: { players: { [key: string]: Player } }) {
 
   return (
     <div className="flex-1 p-4 flex flex-col items-center justify-center">
-      <img src="/werewolf/moon.gif" alt="" aria-hidden />
+      <img
+        className="image-rendering-pixelated"
+        src="/werewolf/moon.gif"
+        alt=""
+        aria-hidden
+      />
 
       <p className="text-center">waiting for players</p>
 
-      <p className="text-center">{count} / 6</p>
+      <p className="text-center">{count} / 6 (minimum)</p>
     </div>
   );
 }
@@ -257,15 +306,44 @@ function Lobby({ players }: { players: { [key: string]: Player } }) {
 function PlayerList({
   players,
   onClick,
+  scryResult,
+  role,
 }: {
+  role?: PlayerRole;
+  scryResult?: ScryResult;
   players: { [key: string]: Player };
   onClick: (id: string) => () => void;
 }) {
   return (
-    <ul>
+    <ul className="flex-1 w-full grid grid-cols-4 gap-4 pt-4">
       {Object.entries(players).map(([id, player]) => (
-        <li key={id}>
-          <button onClick={onClick(id)}>{player.user.display_name}</button>
+        <li key={id} className="min-w-0">
+          <button onClick={onClick(id)}>
+            <div>
+              <div className="relative">
+                <img
+                  className="w-full h-auto align-middle"
+                  src="https://via.placeholder.com/250x250"
+                  alt=""
+                />
+
+                {role === PlayerRole.SEER && scryResult?.id === id && (
+                  <div className="absolute bottom-0 right-0">
+                    <img
+                      className="w-8 h-8 image-rendering-pixelated"
+                      src="/werewolf/wolf.png"
+                      alt=""
+                      aria-hidden
+                    />
+                  </div>
+                )}
+              </div>
+
+              <p className="text-lg text-center truncate">
+                {player.user.display_name}
+              </p>
+            </div>
+          </button>
         </li>
       ))}
     </ul>
