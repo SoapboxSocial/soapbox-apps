@@ -1,10 +1,12 @@
 import { onClose } from "@soapboxsocial/minis.js";
+import cn from "classnames";
 import { useCallback, useEffect, useState } from "react";
 import { useSession, useSoapboxRoomId, useSocket } from "../../hooks";
 import {
   GameAct,
   Player,
   PlayerRole,
+  PlayerStatus,
   ScryResult,
   WerewolfEmitEvents,
   WerewolfListenEvents,
@@ -316,20 +318,33 @@ function PlayerList({
 }) {
   return (
     <ul className="flex-1 w-full grid grid-cols-4 gap-4 pt-4">
-      {Object.entries(players).map(([id, player]) => (
-        <li key={id} className="min-w-0">
-          <button onClick={onClick(id)}>
-            <div>
-              <div className="relative">
+      {Object.entries(players).map(([id, player]) => {
+        const playerRoleSeer = role === PlayerRole.SEER;
+
+        const isDead = player.status === PlayerStatus.DEAD;
+        const isWerewolf = scryResult?.id === id;
+
+        return (
+          <li key={id} className="min-w-0">
+            <button className="w-full" onClick={onClick(id)} disabled={isDead}>
+              <div className="relative w-full h-full aspect-w-1 aspect-h-1">
                 <img
-                  className="w-full h-auto align-middle"
-                  src="https://via.placeholder.com/250x250"
+                  className={cn("mask-image-nes", {
+                    "filter-grayscale": isDead,
+                  })}
+                  src={`https://cdn.soapbox.social/images/${player.user.image}`}
                   alt=""
                 />
 
-                {role === PlayerRole.SEER && scryResult?.id === id && (
-                  <div className="absolute bottom-0 right-0">
+                <div
+                  className="absolute left-0 top-0 right-0 bottom-0 golden-border pointer-events-none"
+                  aria-hidden
+                />
+
+                {playerRoleSeer && isWerewolf && (
+                  <div className="absolute bottom-2 right-2">
                     <img
+                      loading="lazy"
                       className="w-8 h-8 image-rendering-pixelated"
                       src="/werewolf/wolf.png"
                       alt=""
@@ -337,15 +352,23 @@ function PlayerList({
                     />
                   </div>
                 )}
+
+                {isDead && (
+                  <div className="absolute top-1/2 transform-gpu -translate-y-1/2 w-full">
+                    <p className="text-xl text-center text-systemRed-dark">
+                      Dead
+                    </p>
+                  </div>
+                )}
               </div>
 
               <p className="text-lg text-center truncate">
-                {player.user.display_name}
+                {player.user?.display_name ?? player.user.username}
               </p>
-            </div>
-          </button>
-        </li>
-      ))}
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

@@ -6,7 +6,7 @@ import "../styles/globals.css";
 const getUserID = () => getRandom(1024);
 
 export default function SoapboxApp({ Component, pageProps }: AppProps) {
-  if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     (window as any).webkit = {
       messageHandlers: {
         user: {
@@ -23,7 +23,7 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
               data: {
                 display_name: "Jeff",
                 id: getUserID(),
-                image: "fuck",
+                image: "780933635.png",
                 username: "jeff",
               },
             });
