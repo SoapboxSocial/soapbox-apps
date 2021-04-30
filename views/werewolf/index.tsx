@@ -39,10 +39,10 @@ export default function WerewolfView() {
     playerSet(data);
   }, []);
 
-  const [scryResult, scryResultSet] = useState<ScryResult>();
-  const handleScryResult = useCallback((data: ScryResult) => {
-    console.log("Received 'SCRY_RESULT' event", data);
-    scryResultSet(data);
+  const [scryedPlayers, scryedPlayersSet] = useState<ScryResult[]>([]);
+  const handleScryedPlayers = useCallback((data: ScryResult) => {
+    console.log("Received 'SCRYED_PLAYER' event", data);
+    scryedPlayersSet([...scryedPlayers, data]);
   }, []);
 
   const [markedKills, markedKillsSet] = useState<string[]>([]);
@@ -65,14 +65,14 @@ export default function WerewolfView() {
     socket.on("PLAYERS", handlePlayers);
     socket.on("PLAYER", handlePlayer);
     socket.on("ACT", handleAct);
-    socket.on("SCRY_RESULT", handleScryResult);
+    socket.on("SCRYED_PLAYER", handleScryedPlayers);
     socket.on("MARKED_KILLS", handleMarkedKills);
 
     return () => {
       socket.off("PLAYERS", handlePlayers);
       socket.off("PLAYER", handlePlayer);
       socket.off("ACT", handleAct);
-      socket.off("SCRY_RESULT", handleScryResult);
+      socket.off("SCRYED_PLAYER", handleScryedPlayers);
       socket.off("MARKED_KILLS", handleMarkedKills);
 
       socket.disconnect();
@@ -164,17 +164,28 @@ export default function WerewolfView() {
       <ActNight act={act} />
 
       <ActWerewolf
-        act={GameAct.WEREWOLF}
-        markedKills={markedKills}
+        act={act}
         emitKillMarkedEvent={emitKillMarkedEvent}
         emitMarkKillEvent={emitMarkKillEvent}
+        markedKills={markedKills}
         players={players}
-        role={PlayerRole.WEREWOLF}
+        role={player?.role}
       />
 
-      <ActDoctor act={act} role={player?.role} players={players} />
+      <ActDoctor
+        act={act}
+        emitHealEvent={emitHealEvent}
+        players={players}
+        role={player?.role}
+      />
 
-      <ActSeer act={act} role={player?.role} players={players} />
+      <ActSeer
+        act={act}
+        emitScryEvent={emitScryEvent}
+        players={players}
+        role={player?.role}
+        scryedPlayers={scryedPlayers}
+      />
 
       <ActDay act={act} />
 
@@ -244,10 +255,10 @@ function ActWerewolf({
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
         <img
-          className="image-rendering-pixelated"
-          src="/werewolf/wolf.png"
           alt=""
           aria-hidden
+          className="image-rendering-pixelated"
+          src="/werewolf/wolf.png"
         />
 
         <p className="text-center">the werewolves are hunting</p>
@@ -262,25 +273,33 @@ function ActSeer({
   act,
   role,
   players,
+  emitScryEvent,
+  scryedPlayers,
 }: {
   act: GameAct;
   role: PlayerRole;
   players: { [key: string]: Player };
+  scryedPlayers: ScryResult[];
+  emitScryEvent: (id: string) => () => void;
 }) {
-  const playerRoleSeer = role === PlayerRole.SEER;
-
   if (act === GameAct.SEER) {
-    if (playerRoleSeer) {
+    if (role === PlayerRole.SEER) {
       return (
-        <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <div className="flex-1 p-4 flex flex-col">
           <p className="text-center">you are the seer</p>
 
           <p className="text-center">who would you like to ask about?</p>
 
-          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-lg">
+          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-sm pt-4">
             {playersObjToArr(players).map(({ id, player }) => (
               <li key={id}>
-                <PlayerHead onClick={null} player={player} />
+                <PlayerHead
+                  isWerewolf={
+                    scryedPlayers.find((scryed) => scryed.id === id)?.isWerewolf
+                  }
+                  onClick={emitScryEvent(id)}
+                  player={player}
+                />
               </li>
             ))}
           </ul>
@@ -309,23 +328,25 @@ function ActDoctor({
   act,
   role,
   players,
+  emitHealEvent,
 }: {
   act: GameAct;
   role: PlayerRole;
   players: { [key: string]: Player };
+  emitHealEvent: (id: string) => () => void;
 }) {
   if (act === GameAct.DOCTOR) {
     if (role === PlayerRole.DOCTOR)
       return (
-        <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <div className="flex-1 p-4 flex flex-col">
           <p className="text-center">you are the doctor</p>
 
-          <p className="text-center">who would you like to heal?</p>
+          <p className="text-center">choose someone to heal?</p>
 
-          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-lg">
+          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-sm pt-4">
             {playersObjToArr(players).map(({ id, player }) => (
               <li key={id}>
-                <PlayerHead onClick={null} player={player} />
+                <PlayerHead onClick={emitHealEvent(id)} player={player} />
               </li>
             ))}
           </ul>
@@ -335,10 +356,10 @@ function ActDoctor({
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
         <img
-          className="image-rendering-pixelated"
-          src="/werewolf/doctor.png"
           alt=""
           aria-hidden
+          className="image-rendering-pixelated"
+          src="/werewolf/doctor.png"
         />
 
         <p className="text-center">the doctor awakens</p>
@@ -416,7 +437,11 @@ function PlayerHead({
   const isDead = player.status === PlayerStatus.DEAD;
 
   return (
-    <button className="w-full" onClick={onClick} disabled={disabled || isDead}>
+    <button
+      className="w-full group focus:outline-none"
+      onClick={onClick}
+      disabled={disabled || isDead}
+    >
       <div className="relative w-full h-full aspect-w-1 aspect-h-1">
         <img
           className={cn("mask-image-nes", {
@@ -426,10 +451,10 @@ function PlayerHead({
           alt=""
         />
 
-        {/* <div
-          className="absolute left-0 top-0 right-0 bottom-0 golden-border pointer-events-none"
+        <div
+          className="group-focus opacity-0 group-focus:opacity-100 absolute left-0 top-0 right-0 bottom-0 golden-border pointer-events-none"
           aria-hidden
-        /> */}
+        />
 
         {isWerewolf && (
           <div className="absolute bottom-2 right-2">

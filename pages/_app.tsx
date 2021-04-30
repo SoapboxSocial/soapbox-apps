@@ -1,9 +1,43 @@
 import type { AppProps } from "next/dist/next-server/lib/router/router";
 import delay from "../lib/delay";
 import getRandom from "../lib/getRandom";
+import sample from "../lib/sample";
 import "../styles/globals.css";
 
 const getUserID = () => getRandom(1024);
+
+const USERS = [
+  {
+    display_name: "Jeff",
+    id: getUserID(),
+    image: "780933635.png",
+    username: "jeff",
+  },
+  {
+    display_name: "Jack",
+    id: getUserID(),
+    image: "360833143.png",
+    username: "jack",
+  },
+  {
+    display_name: "Dean",
+    id: getUserID(),
+    image: "360833143.png",
+    username: "dean",
+  },
+  {
+    display_name: "Mike",
+    id: getUserID(),
+    image: "360833143.png",
+    username: "mike",
+  },
+  {
+    display_name: "Roger",
+    id: getUserID(),
+    image: "360833143.png",
+    username: "roger",
+  },
+];
 
 export default function SoapboxApp({ Component, pageProps }: AppProps) {
   if (typeof window !== "undefined") {
@@ -20,12 +54,7 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
 
             (window as any).mitt.emit("user", {
               sequence: payload.sequence,
-              data: {
-                display_name: "Jeff",
-                id: getUserID(),
-                image: "780933635.png",
-                username: "jeff",
-              },
+              data: sample(USERS),
             });
           },
         },
@@ -40,38 +69,7 @@ export default function SoapboxApp({ Component, pageProps }: AppProps) {
 
             (window as any).mitt.emit("members", {
               sequence: payload.sequence,
-              data: [
-                {
-                  display_name: "Jeff",
-                  id: getUserID(),
-                  image: "780933635.png",
-                  username: "jeff",
-                },
-                {
-                  display_name: "Jack",
-                  id: getUserID(),
-                  image: "426501433.png",
-                  username: "jack",
-                },
-                {
-                  display_name: "Dean",
-                  id: getUserID(),
-                  image: "360833143.png",
-                  username: "dean",
-                },
-                {
-                  display_name: "Mike",
-                  id: getUserID(),
-                  image: "426501433.png",
-                  username: "mike",
-                },
-                {
-                  display_name: "Roger",
-                  id: getUserID(),
-                  image: "426501433.png",
-                  username: "roger",
-                },
-              ],
+              data: USERS,
             });
           },
         },

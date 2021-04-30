@@ -39,6 +39,7 @@ export interface WerewolfListenEvents {
   SCRY_RESULT: ({ id, isWerewolf }: ScryResult) => void;
   SUGGEST_KILL_RESULT: (id: string) => void;
   MARKED_KILLS: (marked: string[]) => void;
+  SCRYED_PLAYER: (scryed: ScryResult) => void;
 }
 
 export interface WerewolfEmitEvents {
