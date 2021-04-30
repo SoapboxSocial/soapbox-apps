@@ -1,5 +1,6 @@
 module.exports = {
-  purge: ["**/*.{js,jsx,ts,tsx}"],
+  purge: ["pages/**/*.tsx", "views/**/*.tsx", "components/**/*.tsx"],
+  mode: "jit",
   darkMode: "media",
   theme: {
     borderRadius: {

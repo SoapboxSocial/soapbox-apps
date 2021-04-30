@@ -37,12 +37,16 @@ export interface WerewolfListenEvents {
   PLAYER: (player: Player) => void;
   ACT: (act: GameAct) => void;
   SCRY_RESULT: ({ id, isWerewolf }: ScryResult) => void;
+  SUGGEST_KILL_RESULT: (id: string) => void;
+  MARKED_KILLS: (marked: string[]) => void;
 }
 
 export interface WerewolfEmitEvents {
   CLOSE_GAME: () => void;
   JOIN_GAME: (user: User) => void;
-  KILL: (id: string) => void;
+  MARK_KILL: (id: string) => void;
+  KILL_MARKED: () => void;
   HEAL: (id: string) => void;
   SCRY: (id: string) => void;
+  SUGGEST_WEREWOLF: (id: string) => void;
 }

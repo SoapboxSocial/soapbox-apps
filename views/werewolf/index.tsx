@@ -45,6 +45,13 @@ export default function WerewolfView() {
     scryResultSet(data);
   }, []);
 
+  const [markedKills, markedKillsSet] = useState<string[]>([]);
+  const handleMarkedKills = useCallback((data: string[]) => {
+    console.log("Received 'MARKED_KILLS' event", data);
+
+    markedKillsSet(data);
+  }, []);
+
   /**
    * Setup Listeners
    */
@@ -59,12 +66,14 @@ export default function WerewolfView() {
     socket.on("PLAYER", handlePlayer);
     socket.on("ACT", handleAct);
     socket.on("SCRY_RESULT", handleScryResult);
+    socket.on("MARKED_KILLS", handleMarkedKills);
 
     return () => {
       socket.off("PLAYERS", handlePlayers);
       socket.off("PLAYER", handlePlayer);
       socket.off("ACT", handleAct);
       socket.off("SCRY_RESULT", handleScryResult);
+      socket.off("MARKED_KILLS", handleMarkedKills);
 
       socket.disconnect();
     };
@@ -73,18 +82,9 @@ export default function WerewolfView() {
   /**
    * Emitters
    */
-  const emitKillEvent = useCallback(
-    (id: string) => {
-      return () => {
-        if (typeof id === "undefined") {
-          return;
-        }
-
-        socket.emit("KILL", id);
-      };
-    },
-    [socket]
-  );
+  const emitKillMarkedEvent = useCallback(() => {
+    socket.emit("KILL_MARKED");
+  }, [socket]);
 
   const emitHealEvent = useCallback(
     (id: string) => {
@@ -107,6 +107,19 @@ export default function WerewolfView() {
         }
 
         socket.emit("SCRY", id);
+      };
+    },
+    [socket]
+  );
+
+  const emitMarkKillEvent = useCallback(
+    (id: string) => {
+      return () => {
+        if (typeof id === "undefined") {
+          return;
+        }
+
+        socket.emit("MARK_KILL", id);
       };
     },
     [socket]
@@ -139,61 +152,94 @@ export default function WerewolfView() {
    */
   const waitingForPlayers = Object.keys(players).length < 6;
 
+  if (false)
+    return (
+      <main className="flex flex-col min-h-screen select-none relative">
+        <Lobby players={players} />
+      </main>
+    );
+
   return (
     <main className="flex flex-col min-h-screen select-none relative">
-      {!waitingForPlayers && (
-        <Stage
-          act={act}
-          role={player?.role}
-          scryResult={scryResult}
-          players={players}
-          emitKillEvent={emitKillEvent}
-          emitHealEvent={emitHealEvent}
-          emitScryEvent={emitScryEvent}
-        />
-      )}
+      <ActNight act={act} />
 
-      {waitingForPlayers && <Lobby players={players} />}
+      <ActWerewolf
+        act={GameAct.WEREWOLF}
+        markedKills={markedKills}
+        emitKillMarkedEvent={emitKillMarkedEvent}
+        emitMarkKillEvent={emitMarkKillEvent}
+        players={players}
+        role={PlayerRole.WEREWOLF}
+      />
+
+      <ActDoctor act={act} role={player?.role} players={players} />
+
+      <ActSeer act={act} role={player?.role} players={players} />
+
+      <ActDay act={act} />
+
+      <ActVoting act={act} players={players} />
     </main>
   );
 }
 
-function Stage({
-  act,
-  role,
-  players,
-  scryResult,
-  emitKillEvent,
-  emitHealEvent,
-  emitScryEvent,
-}: {
-  act?: GameAct;
-  role?: PlayerRole;
-  scryResult?: ScryResult;
-  players: { [key: string]: Player };
-  emitKillEvent: (id: string) => () => void;
-  emitHealEvent: (id: string) => () => void;
-  emitScryEvent: (id: string) => () => void;
-}) {
-  if (act === GameAct.NIGHT) {
+function ActNight({ act }: { act: GameAct }) {
+  if (act === GameAct.NIGHT)
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
         <p className="text-center">night descends...</p>
       </div>
     );
-  }
 
+  return null;
+}
+
+function ActWerewolf({
+  act,
+  emitKillMarkedEvent,
+  emitMarkKillEvent,
+  players,
+  role,
+  markedKills,
+}: {
+  act: GameAct;
+  emitKillMarkedEvent: () => void;
+  emitMarkKillEvent: (id: string) => () => void;
+  players: { [key: string]: Player };
+  role: PlayerRole;
+  markedKills: string[];
+}) {
   if (act === GameAct.WEREWOLF) {
-    if (role === PlayerRole.WEREWOLF)
+    if (role === PlayerRole.WEREWOLF) {
       return (
-        <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <div className="flex-1 p-4 flex flex-col">
           <p className="text-center">you are a werewolf</p>
 
-          <p className="text-center">who would you like to kill?</p>
+          <p className="text-center">mark someone to kill</p>
 
-          <PlayerList players={players} onClick={emitKillEvent} />
+          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-sm pt-4">
+            {playersObjToArr(players).map(({ id, player }) => (
+              <li key={id}>
+                <PlayerHead
+                  disabled={markedKills.length === 2}
+                  isMarked={markedKills.includes(id)}
+                  onClick={emitMarkKillEvent(id)}
+                  player={player}
+                />
+              </li>
+            ))}
+          </ul>
+
+          <button
+            onClick={emitKillMarkedEvent}
+            disabled={markedKills.length < 2}
+            className="nes-btn w-full"
+          >
+            Kill Marked
+          </button>
         </div>
       );
+    }
 
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
@@ -209,6 +255,65 @@ function Stage({
     );
   }
 
+  return null;
+}
+
+function ActSeer({
+  act,
+  role,
+  players,
+}: {
+  act: GameAct;
+  role: PlayerRole;
+  players: { [key: string]: Player };
+}) {
+  const playerRoleSeer = role === PlayerRole.SEER;
+
+  if (act === GameAct.SEER) {
+    if (playerRoleSeer) {
+      return (
+        <div className="flex-1 p-4 flex flex-col items-center justify-center">
+          <p className="text-center">you are the seer</p>
+
+          <p className="text-center">who would you like to ask about?</p>
+
+          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-lg">
+            {playersObjToArr(players).map(({ id, player }) => (
+              <li key={id}>
+                <PlayerHead onClick={null} player={player} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <img
+          className="image-rendering-pixelated"
+          src="/werewolf/seer.png"
+          alt=""
+          aria-hidden
+        />
+
+        <p className="text-center">the seer awakens</p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function ActDoctor({
+  act,
+  role,
+  players,
+}: {
+  act: GameAct;
+  role: PlayerRole;
+  players: { [key: string]: Player };
+}) {
   if (act === GameAct.DOCTOR) {
     if (role === PlayerRole.DOCTOR)
       return (
@@ -217,7 +322,13 @@ function Stage({
 
           <p className="text-center">who would you like to heal?</p>
 
-          <PlayerList players={players} onClick={emitHealEvent} />
+          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-lg">
+            {playersObjToArr(players).map(({ id, player }) => (
+              <li key={id}>
+                <PlayerHead onClick={null} player={player} />
+              </li>
+            ))}
+          </ul>
         </div>
       );
 
@@ -235,36 +346,10 @@ function Stage({
     );
   }
 
-  if (act === GameAct.SEER) {
-    if (role === PlayerRole.SEER)
-      return (
-        <div className="flex-1 p-4 flex flex-col items-center justify-center">
-          <p className="text-center">you are the seer</p>
+  return null;
+}
 
-          <p className="text-center">who would you like to ask about?</p>
-
-          <PlayerList
-            scryResult={scryResult}
-            players={players}
-            onClick={emitScryEvent}
-          />
-        </div>
-      );
-
-    return (
-      <div className="flex-1 p-4 flex flex-col items-center justify-center">
-        <img
-          className="image-rendering-pixelated"
-          src="/werewolf/seer.png"
-          alt=""
-          aria-hidden
-        />
-
-        <p className="text-center">the seer awakens</p>
-      </div>
-    );
-  }
-
+function ActDay({ act }: { act: GameAct }) {
   if (act === GameAct.DAY) {
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
@@ -273,12 +358,22 @@ function Stage({
     );
   }
 
+  return null;
+}
+
+function ActVoting({
+  act,
+  players,
+}: {
+  act: GameAct;
+  players: { [key: string]: Player };
+}) {
   if (act === GameAct.VOTING) {
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
         <p className="text-center">who do you think is a werewolf?</p>
 
-        <PlayerList players={players} onClick={emitScryEvent} />
+        <PlayerList players={players} onClick={null} />
       </div>
     );
   }
@@ -305,6 +400,72 @@ function Lobby({ players }: { players: { [key: string]: Player } }) {
   );
 }
 
+function PlayerHead({
+  isWerewolf,
+  isMarked,
+  onClick,
+  player,
+  disabled,
+}: {
+  disabled?: boolean;
+  isMarked?: boolean;
+  isWerewolf?: boolean;
+  onClick: () => void;
+  player: Player;
+}) {
+  const isDead = player.status === PlayerStatus.DEAD;
+
+  return (
+    <button className="w-full" onClick={onClick} disabled={disabled || isDead}>
+      <div className="relative w-full h-full aspect-w-1 aspect-h-1">
+        <img
+          className={cn("mask-image-nes", {
+            "filter-grayscale-full": isDead || isMarked,
+          })}
+          src={`https://cdn.soapbox.social/images/${player.user.image}`}
+          alt=""
+        />
+
+        {/* <div
+          className="absolute left-0 top-0 right-0 bottom-0 golden-border pointer-events-none"
+          aria-hidden
+        /> */}
+
+        {isWerewolf && (
+          <div className="absolute bottom-2 right-2">
+            <img
+              loading="lazy"
+              className="w-8 h-8 image-rendering-pixelated"
+              src="/werewolf/wolf.png"
+              alt=""
+              aria-hidden
+            />
+          </div>
+        )}
+
+        {isMarked && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <p className="text-xl text-center text-systemRed-dark">Marked</p>
+          </div>
+        )}
+
+        {isDead && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <p className="text-xl text-center text-systemRed-dark">Dead</p>
+          </div>
+        )}
+      </div>
+
+      <p className="text-lg text-center truncate">
+        {player.user?.display_name ?? player.user.username}
+      </p>
+    </button>
+  );
+}
+
+const playersObjToArr = (players: { [key: string]: Player }) =>
+  Object.entries(players).map(([id, player]) => ({ id, player }));
+
 function PlayerList({
   players,
   onClick,
@@ -313,62 +474,22 @@ function PlayerList({
 }: {
   role?: PlayerRole;
   scryResult?: ScryResult;
+  suggestKillResult?: string[];
   players: { [key: string]: Player };
   onClick: (id: string) => () => void;
 }) {
   return (
-    <ul className="flex-1 w-full grid grid-cols-4 gap-4 pt-4">
-      {Object.entries(players).map(([id, player]) => {
-        const playerRoleSeer = role === PlayerRole.SEER;
+    <div className="flex-1 w-full pt-4">
+      <ul className="grid grid-cols-4 gap-4 max-w-lg">
+        {Object.entries(players).map(([id, player]) => {
+          const isDead = player.status === PlayerStatus.DEAD;
+          const isWerewolf = scryResult?.id === id;
 
-        const isDead = player.status === PlayerStatus.DEAD;
-        const isWerewolf = scryResult?.id === id;
+          return <li key={id} className="min-w-0"></li>;
+        })}
+      </ul>
 
-        return (
-          <li key={id} className="min-w-0">
-            <button className="w-full" onClick={onClick(id)} disabled={isDead}>
-              <div className="relative w-full h-full aspect-w-1 aspect-h-1">
-                <img
-                  className={cn("mask-image-nes", {
-                    "filter-grayscale": isDead,
-                  })}
-                  src={`https://cdn.soapbox.social/images/${player.user.image}`}
-                  alt=""
-                />
-
-                <div
-                  className="absolute left-0 top-0 right-0 bottom-0 golden-border pointer-events-none"
-                  aria-hidden
-                />
-
-                {playerRoleSeer && isWerewolf && (
-                  <div className="absolute bottom-2 right-2">
-                    <img
-                      loading="lazy"
-                      className="w-8 h-8 image-rendering-pixelated"
-                      src="/werewolf/wolf.png"
-                      alt=""
-                      aria-hidden
-                    />
-                  </div>
-                )}
-
-                {isDead && (
-                  <div className="absolute top-1/2 transform-gpu -translate-y-1/2 w-full">
-                    <p className="text-xl text-center text-systemRed-dark">
-                      Dead
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <p className="text-lg text-center truncate">
-                {player.user?.display_name ?? player.user.username}
-              </p>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+      <button className="nes-btn w-full">Kill</button>
+    </div>
   );
 }
