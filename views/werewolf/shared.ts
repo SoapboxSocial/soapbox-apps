@@ -14,13 +14,14 @@ export enum PlayerRole {
 }
 
 export enum GameAct {
-  VOTING = "VOTING",
   DAY = "DAY",
-  WEREWOLF = "WEREWOLF",
-  SEER = "SEER",
   DOCTOR = "DOCTOR",
-  VILLAGER = "VILLAGER",
   NIGHT = "NIGHT",
+  SEER = "SEER",
+  START_ROUND = "START_ROUND",
+  VILLAGER = "VILLAGER",
+  VOTING = "VOTING",
+  WEREWOLF = "WEREWOLF",
 }
 
 export type Player = {
@@ -29,7 +30,10 @@ export type Player = {
   user: User;
 };
 
-export type ScryResult = { id: string; isWerewolf: boolean };
+export type ScryResult = {
+  id: string;
+  isWerewolf: boolean;
+};
 
 export interface WerewolfListenEvents {
   TIME: (timeLeft: number) => void;
@@ -40,14 +44,16 @@ export interface WerewolfListenEvents {
   SUGGEST_KILL_RESULT: (id: string) => void;
   MARKED_KILLS: (marked: string[]) => void;
   SCRYED_PLAYER: (scryed: ScryResult) => void;
+  VOTED_PLAYERS: (voted: string[]) => void;
 }
 
 export interface WerewolfEmitEvents {
   CLOSE_GAME: () => void;
   JOIN_GAME: (user: User) => void;
+  START_GAME: () => void;
   MARK_KILL: (id: string) => void;
   KILL_MARKED: () => void;
   HEAL: (id: string) => void;
   SCRY: (id: string) => void;
-  SUGGEST_WEREWOLF: (id: string) => void;
+  VOTE: (id: string) => void;
 }
