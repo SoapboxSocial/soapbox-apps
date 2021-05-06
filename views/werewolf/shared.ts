@@ -17,6 +17,7 @@ export enum GameAct {
   DAY = "DAY",
   DOCTOR = "DOCTOR",
   NIGHT = "NIGHT",
+  NIGHT_SUMMARY = "NIGHT_SUMMARY",
   SEER = "SEER",
   START_ROUND = "START_ROUND",
   VILLAGER = "VILLAGER",
@@ -35,6 +36,11 @@ export type ScryResult = {
   isWerewolf: boolean;
 };
 
+export type NightSummary = {
+  healed?: Player;
+  killed?: Player;
+};
+
 export interface WerewolfListenEvents {
   TIME: (timeLeft: number) => void;
   PLAYERS: (players: { [key: string]: Player }) => void;
@@ -45,6 +51,7 @@ export interface WerewolfListenEvents {
   MARKED_KILLS: (marked: string[]) => void;
   SCRYED_PLAYER: (scryed: ScryResult) => void;
   VOTED_PLAYERS: (voted: string[]) => void;
+  NIGHT_SUMMARY: (summary: NightSummary) => void;
 }
 
 export interface WerewolfEmitEvents {

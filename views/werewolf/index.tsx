@@ -11,6 +11,7 @@ import {
 } from "../../hooks";
 import {
   GameAct,
+  NightSummary,
   Player,
   PlayerRole,
   PlayerStatus,
@@ -73,6 +74,13 @@ export default function WerewolfView() {
     votedPlayersSet(data);
   }, []);
 
+  const [nightSummary, nightSummarySet] = useState<NightSummary>();
+  const handleNightSummary = useCallback((data: NightSummary) => {
+    console.log("Received 'NIGHT_SUMMARY' event", data);
+
+    nightSummarySet(data);
+  }, []);
+
   /**
    * Setup Listeners
    */
@@ -89,6 +97,7 @@ export default function WerewolfView() {
     socket.on("SCRYED_PLAYER", handleScryedPlayers);
     socket.on("MARKED_KILLS", handleMarkedKills);
     socket.on("VOTED_PLAYERS", handleVotedPlayers);
+    socket.on("NIGHT_SUMMARY", handleNightSummary);
 
     return () => {
       socket.off("PLAYERS", handlePlayers);
@@ -97,6 +106,7 @@ export default function WerewolfView() {
       socket.off("SCRYED_PLAYER", handleScryedPlayers);
       socket.off("MARKED_KILLS", handleMarkedKills);
       socket.off("VOTED_PLAYERS", handleVotedPlayers);
+      socket.off("NIGHT_SUMMARY", handleNightSummary);
 
       socket.disconnect();
     };
@@ -200,6 +210,8 @@ export default function WerewolfView() {
         scryedPlayers={scryedPlayers}
       />
 
+      <ActNightSummary act={act} nightSummary={nightSummary} />
+
       <ActDay act={act} />
 
       <ActVoting
@@ -229,6 +241,40 @@ function ActNight({ act }: { act: GameAct }) {
         />
 
         <p className="text-center">night descends...</p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function ActNightSummary({
+  act,
+  nightSummary,
+}: {
+  act: GameAct;
+  nightSummary: NightSummary;
+}) {
+  if (act === GameAct.NIGHT_SUMMARY) {
+    if (nightSummary?.healed) {
+      return (
+        <div className="flex-1 p-4 flex flex-col items-center justify-center">
+          <p className="text-center">
+            {nightSummary.healed.user?.display_name ??
+              nightSummary.healed.user.username}{" "}
+            was saved
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <p className="text-center">
+          {nightSummary.killed.user?.display_name ??
+            nightSummary.killed.user.username}{" "}
+          was killed
+        </p>
       </div>
     );
   }
@@ -316,6 +362,7 @@ function ActWerewolf({
             {playersObjToArr(players).map(({ id, player }) => (
               <li key={id}>
                 <PlayerHead
+                  isWerewolf={player.role === PlayerRole.WEREWOLF}
                   disabled={didMark || markedKills.length === 2}
                   isMarked={markedKills.includes(id)}
                   onClick={handleMark(id)}
@@ -719,7 +766,7 @@ function Timer({
 }: {
   socket: Socket<WerewolfListenEvents, WerewolfListenEvents>;
 }) {
-  const [timer, timerSet] = useState<number>(0);
+  const [timer, timerSet] = useState<number>(ROUND_DURATION);
 
   useEffect(() => {
     if (!socket) {
