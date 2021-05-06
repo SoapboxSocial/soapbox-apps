@@ -1,6 +1,8 @@
 import { onClose } from "@soapboxsocial/minis.js";
 import cn from "classnames";
-import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import { Socket } from "socket.io-client";
 import {
   useParams,
   useSession,
@@ -201,10 +203,13 @@ export default function WerewolfView() {
       <ActDay act={act} />
 
       <ActVoting
+        socket={socket}
         act={act}
         emitVoteEvent={emitVoteEvent}
         players={players}
+        role={player?.role}
         votedPlayers={votedPlayers}
+        scryedPlayers={scryedPlayers}
       />
     </main>
   );
@@ -509,12 +514,20 @@ function ActVoting({
   emitVoteEvent,
   players,
   votedPlayers,
+  role,
+  scryedPlayers,
+  socket,
 }: {
   act: GameAct;
   emitVoteEvent: (id: string) => void;
   players: { [key: string]: Player };
   votedPlayers: string[];
+  role: PlayerRole;
+  scryedPlayers: ScryResult[];
+  socket: Socket<WerewolfListenEvents, WerewolfEmitEvents>;
 }) {
+  const isSeer = role === PlayerRole.SEER;
+
   const [didVote, didVoteSet] = useState(false);
 
   useEffect(() => {
@@ -529,22 +542,31 @@ function ActVoting({
 
   if (act === GameAct.VOTING) {
     return (
-      <div className="flex-1 p-4 flex flex-col">
-        <p className="text-center">who do you think is a werewolf?</p>
+      <Fragment>
+        <Timer socket={socket} />
 
-        <ul className="flex-1 grid grid-cols-4 gap-4 max-w-sm pt-4">
-          {playersObjToArr(players).map(({ id, player }) => (
-            <li key={id}>
-              <PlayerHead
-                disabled={didVote}
-                isVoted={votedPlayers.includes(id)}
-                onClick={handleVote(id)}
-                player={player}
-              />
-            </li>
-          ))}
-        </ul>
-      </div>
+        <div className="flex-1 p-4 flex flex-col">
+          <p className="text-center">who do you think is a werewolf?</p>
+
+          <ul className="flex-1 grid grid-cols-4 gap-4 max-w-sm pt-4">
+            {playersObjToArr(players).map(({ id, player }) => (
+              <li key={id}>
+                <PlayerHead
+                  isWerewolf={
+                    isSeer &&
+                    scryedPlayers?.find((scryed) => scryed.id === id)
+                      ?.isWerewolf
+                  }
+                  disabled={didVote}
+                  isVoted={votedPlayers.includes(id)}
+                  onClick={handleVote(id)}
+                  player={player}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Fragment>
     );
   }
 
@@ -687,5 +709,43 @@ function PlayerHead({
         {player.user?.display_name ?? player.user.username}
       </p>
     </button>
+  );
+}
+
+const ROUND_DURATION = 60 * 3;
+
+function Timer({
+  socket,
+}: {
+  socket: Socket<WerewolfListenEvents, WerewolfListenEvents>;
+}) {
+  const [timer, timerSet] = useState<number>(0);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    const handleTime = (data: number) => {
+      console.log("Received 'TIME' event", data);
+
+      timerSet(data);
+    };
+
+    socket.on("TIME", handleTime);
+
+    return () => {
+      socket.off("TIME", handleTime);
+    };
+  }, [socket]);
+
+  return (
+    <div className="absolute top-0 right-0 left-0">
+      <motion.div
+        animate={{ width: `${(timer / ROUND_DURATION) * 100}%` }}
+        transition={{ ease: "linear" }}
+        className="h-1 bg-soapbox"
+      />
+    </div>
   );
 }
