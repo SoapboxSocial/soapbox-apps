@@ -168,7 +168,7 @@ export default function WerewolfView() {
 
   return (
     <main className="flex flex-col min-h-screen select-none relative">
-      <Lobby emitStartGame={emitStartGame} act={act} players={players} />
+      <Lobby act={act} emitStartGame={emitStartGame} players={players} />
 
       <StartRound act={act} role={player?.role} />
 
@@ -643,14 +643,16 @@ function PlayerHead({
         />
 
         {isWerewolf && (
-          <div className="absolute bottom-2 right-2">
-            <img
-              alt=""
-              aria-hidden
-              className="w-8 h-8 image-rendering-pixelated"
-              loading="eager"
-              src="/werewolf/wolf.png"
-            />
+          <div className="absolute">
+            <div className="absolute bottom-0 right-1">
+              <img
+                alt=""
+                aria-hidden
+                className="w-8 h-8 image-rendering-pixelated"
+                loading="eager"
+                src="/werewolf/wolf-icon.png"
+              />
+            </div>
           </div>
         )}
 
@@ -667,8 +669,16 @@ function PlayerHead({
         )}
 
         {isDead && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-xl text-center text-systemRed-dark">Dead</p>
+          <div className="absolute">
+            <div className="absolute bottom-0 right-1">
+              <img
+                alt=""
+                aria-hidden
+                className="w-8 h-8 image-rendering-pixelated"
+                loading="eager"
+                src="/werewolf/skull-icon.png"
+              />
+            </div>
           </div>
         )}
       </div>
