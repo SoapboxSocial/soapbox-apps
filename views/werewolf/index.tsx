@@ -115,9 +115,6 @@ export default function WerewolfView() {
   /**
    * Emitters
    */
-  const emitKillMarkedEvent = useCallback(() => {
-    socket.emit("KILL_MARKED");
-  }, [socket]);
 
   const emitHealEvent = useCallback(
     (id: string) => {
@@ -188,7 +185,6 @@ export default function WerewolfView() {
 
       <ActWerewolf
         act={act}
-        emitKillMarkedEvent={emitKillMarkedEvent}
         emitMarkKillEvent={emitMarkKillEvent}
         markedKills={markedKills}
         players={players}
@@ -349,20 +345,28 @@ function StartRound({ act, role }: { act: GameAct; role: PlayerRole }) {
 
 function ActWerewolf({
   act,
-  emitKillMarkedEvent,
   emitMarkKillEvent,
   markedKills,
   players,
   role,
 }: {
   act: GameAct;
-  emitKillMarkedEvent: () => void;
   emitMarkKillEvent: (id: string) => void;
   markedKills: string[];
   players: { [key: string]: Player };
   role: PlayerRole;
 }) {
   const [didMark, didMarkSet] = useState(false);
+
+  let werewolfCount = 2;
+  switch (true) {
+    case Object.keys(players).length > 8:
+      werewolfCount = 3;
+      break;
+    case Object.keys(players).length > 12:
+      werewolfCount = 4;
+      break;
+  }
 
   useEffect(() => {
     didMarkSet(false);
@@ -390,7 +394,7 @@ function ActWerewolf({
                   disabled={
                     player.role === PlayerRole.WEREWOLF ||
                     didMark ||
-                    markedKills.length === 2
+                    markedKills.length === werewolfCount
                   }
                   isMarked={markedKills.includes(id)}
                   onClick={handleMark(id)}
@@ -399,14 +403,6 @@ function ActWerewolf({
               </li>
             ))}
           </ul>
-
-          <button
-            onClick={emitKillMarkedEvent}
-            disabled={markedKills.length < 2}
-            className="nes-btn w-full"
-          >
-            Kill Marked
-          </button>
         </div>
       );
     }

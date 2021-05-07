@@ -59,7 +59,6 @@ export interface WerewolfEmitEvents {
   JOIN_GAME: (user: User) => void;
   START_GAME: () => void;
   MARK_KILL: (id: string) => void;
-  KILL_MARKED: () => void;
   HEAL: (id: string) => void;
   SCRY: (id: string) => void;
   VOTE: (id: string) => void;
