@@ -46,7 +46,7 @@ export type DaySummary = { killed: Player };
 
 export interface WerewolfListenEvents {
   TIME: (timeLeft: number) => void;
-  PLAYERS: (players: { [key: string]: Player }) => void;
+  PLAYERS: (players: Record<string, Player>) => void;
   PLAYER: (player: Player) => void;
   ACT: (act: GameAct) => void;
   SCRY_RESULT: ({ id, isWerewolf }: ScryResult) => void;
