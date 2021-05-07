@@ -194,6 +194,7 @@ export default function WerewolfView() {
       <ActNight act={act} />
 
       <ActWerewolf
+        status={player?.status}
         act={act}
         emitMarkKillEvent={emitMarkKillEvent}
         markedKills={markedKills}
@@ -202,6 +203,7 @@ export default function WerewolfView() {
       />
 
       <ActDoctor
+        status={player?.status}
         act={act}
         emitHealEvent={emitHealEvent}
         players={players}
@@ -209,6 +211,7 @@ export default function WerewolfView() {
       />
 
       <ActSeer
+        status={player?.status}
         act={act}
         emitScryEvent={emitScryEvent}
         players={players}
@@ -224,6 +227,7 @@ export default function WerewolfView() {
 
       <ActVoting
         socket={socket}
+        status={player?.status}
         act={act}
         emitVoteEvent={emitVoteEvent}
         players={players}
@@ -396,12 +400,14 @@ function ActWerewolf({
   markedKills,
   players,
   role,
+  status,
 }: {
   act: GameAct;
   emitMarkKillEvent: (id: string) => void;
   markedKills: string[];
   players: { [key: string]: Player };
   role: PlayerRole;
+  status: PlayerStatus;
 }) {
   const [didMark, didMarkSet] = useState(false);
 
@@ -479,12 +485,14 @@ function ActSeer({
   players,
   role,
   scryedPlayers,
+  status,
 }: {
   act: GameAct;
   emitScryEvent: (id: string) => void;
   players: { [key: string]: Player };
   role: PlayerRole;
   scryedPlayers: ScryResult[];
+  status: PlayerStatus;
 }) {
   const [didScry, didScrySet] = useState(false);
 
@@ -548,11 +556,13 @@ function ActDoctor({
   emitHealEvent,
   players,
   role,
+  status,
 }: {
   act: GameAct;
   emitHealEvent: (id: string) => void;
   players: { [key: string]: Player };
   role: PlayerRole;
+  status: PlayerStatus;
 }) {
   const [didHeal, didHealSet] = useState(false);
 
@@ -633,6 +643,7 @@ function ActVoting({
   players,
   votedPlayers,
   role,
+  status,
   scryedPlayers,
   socket,
 }: {
@@ -641,6 +652,7 @@ function ActVoting({
   players: { [key: string]: Player };
   votedPlayers: string[];
   role: PlayerRole;
+  status: PlayerStatus;
   scryedPlayers: ScryResult[];
   socket: Socket<WerewolfListenEvents, WerewolfEmitEvents>;
 }) {
