@@ -258,23 +258,49 @@ function ActNightSummary({
   if (act === GameAct.NIGHT_SUMMARY) {
     if (nightSummary?.healed) {
       return (
-        <div className="flex-1 p-4 flex flex-col items-center justify-center">
-          <p className="text-center">
-            {nightSummary.healed.user?.display_name ??
-              nightSummary.healed.user.username}{" "}
-            was saved
-          </p>
+        <div className="flex-1 p-4 flex flex-col">
+          <p className="text-center">during the night</p>
+
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="block mx-auto w-24">
+              <PlayerHead
+                disabled
+                onClick={null}
+                player={nightSummary.healed}
+                showName={false}
+              />
+            </div>
+
+            <p className="text-center">
+              {nightSummary.healed.user?.display_name ??
+                nightSummary.healed.user.username}{" "}
+              was saved
+            </p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="flex-1 p-4 flex flex-col items-center justify-center">
-        <p className="text-center">
-          {nightSummary.killed.user?.display_name ??
-            nightSummary.killed.user.username}{" "}
-          was killed
-        </p>
+      <div className="flex-1 p-4 flex flex-col">
+        <p className="text-center">during the night</p>
+
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="block mx-auto w-24">
+            <PlayerHead
+              disabled
+              onClick={null}
+              player={nightSummary.killed}
+              showName={false}
+            />
+          </div>
+
+          <p className="text-center">
+            {nightSummary.killed.user?.display_name ??
+              nightSummary.killed.user.username}{" "}
+            was killed
+          </p>
+        </div>
       </div>
     );
   }
@@ -304,18 +330,16 @@ function StartRound({ act, role }: { act: GameAct; role: PlayerRole }) {
   if (act === GameAct.START_ROUND) {
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
-        <div className="flex-1 p-4 flex flex-col items-center justify-center">
-          <img
-            alt=""
-            aria-hidden
-            className="image-rendering-pixelated w-40 h-40"
-            draggable={false}
-            loading="eager"
-            src={image}
-          />
+        <img
+          alt=""
+          aria-hidden
+          className="image-rendering-pixelated w-40 h-40"
+          draggable={false}
+          loading="eager"
+          src={image}
+        />
 
-          <p className="text-center">{text}</p>
-        </div>
+        <p className="text-center">{text}</p>
       </div>
     );
   }
@@ -363,7 +387,11 @@ function ActWerewolf({
               <li key={id}>
                 <PlayerHead
                   isWerewolf={player.role === PlayerRole.WEREWOLF}
-                  disabled={didMark || markedKills.length === 2}
+                  disabled={
+                    player.role === PlayerRole.WEREWOLF ||
+                    didMark ||
+                    markedKills.length === 2
+                  }
                   isMarked={markedKills.includes(id)}
                   onClick={handleMark(id)}
                   player={player}
@@ -442,7 +470,7 @@ function ActSeer({
                   isWerewolf={
                     scryedPlayers.find((scryed) => scryed.id === id)?.isWerewolf
                   }
-                  disabled={didScry}
+                  disabled={didScry || player.role === PlayerRole.SEER}
                   onClick={handleScry(id)}
                   player={player}
                 />
@@ -680,6 +708,7 @@ function PlayerHead({
   isWerewolf,
   onClick,
   player,
+  showName = true,
 }: {
   disabled?: boolean;
   isMarked?: boolean;
@@ -687,6 +716,7 @@ function PlayerHead({
   isWerewolf?: boolean;
   onClick: () => void;
   player: Player;
+  showName?: boolean;
 }) {
   const isDead = player.status === PlayerStatus.DEAD;
 
@@ -752,9 +782,11 @@ function PlayerHead({
         )}
       </div>
 
-      <p className="text-lg text-center truncate">
-        {player.user?.display_name ?? player.user.username}
-      </p>
+      {showName && (
+        <p className="text-lg text-center truncate">
+          {player.user?.display_name ?? player.user.username}
+        </p>
+      )}
     </button>
   );
 }
