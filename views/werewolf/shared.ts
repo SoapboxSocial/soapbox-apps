@@ -15,6 +15,7 @@ export enum PlayerRole {
 
 export enum GameAct {
   DAY = "DAY",
+  DAY_SUMMARY = "DAY_SUMMARY",
   DOCTOR = "DOCTOR",
   NIGHT = "NIGHT",
   NIGHT_SUMMARY = "NIGHT_SUMMARY",
@@ -41,6 +42,8 @@ export type NightSummary = {
   killed?: Player;
 };
 
+export type DaySummary = { killed: Player };
+
 export interface WerewolfListenEvents {
   TIME: (timeLeft: number) => void;
   PLAYERS: (players: { [key: string]: Player }) => void;
@@ -52,6 +55,7 @@ export interface WerewolfListenEvents {
   SCRYED_PLAYER: (scryed: ScryResult) => void;
   VOTED_PLAYERS: (voted: string[]) => void;
   NIGHT_SUMMARY: (summary: NightSummary) => void;
+  DAY_SUMMARY: (summary: DaySummary) => void;
 }
 
 export interface WerewolfEmitEvents {

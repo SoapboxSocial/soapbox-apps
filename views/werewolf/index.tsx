@@ -10,6 +10,7 @@ import {
   useSocket,
 } from "../../hooks";
 import {
+  DaySummary,
   GameAct,
   NightSummary,
   Player,
@@ -81,6 +82,13 @@ export default function WerewolfView() {
     nightSummarySet(data);
   }, []);
 
+  const [daySummary, daySummarySet] = useState<DaySummary>();
+  const handleDaySummary = useCallback((data: DaySummary) => {
+    console.log("Received 'DAY_SUMMARY' event", data);
+
+    daySummarySet(data);
+  }, []);
+
   /**
    * Setup Listeners
    */
@@ -98,6 +106,7 @@ export default function WerewolfView() {
     socket.on("MARKED_KILLS", handleMarkedKills);
     socket.on("VOTED_PLAYERS", handleVotedPlayers);
     socket.on("NIGHT_SUMMARY", handleNightSummary);
+    socket.on("DAY_SUMMARY", handleDaySummary);
 
     return () => {
       socket.off("PLAYERS", handlePlayers);
@@ -107,6 +116,7 @@ export default function WerewolfView() {
       socket.off("MARKED_KILLS", handleMarkedKills);
       socket.off("VOTED_PLAYERS", handleVotedPlayers);
       socket.off("NIGHT_SUMMARY", handleNightSummary);
+      socket.off("DAY_SUMMARY", handleDaySummary);
 
       socket.disconnect();
     };
@@ -210,6 +220,8 @@ export default function WerewolfView() {
 
       <ActDay act={act} />
 
+      <ActDaySummary act={act} daySummary={daySummary} />
+
       <ActVoting
         socket={socket}
         act={act}
@@ -295,6 +307,41 @@ function ActNightSummary({
             {nightSummary.killed.user?.display_name ??
               nightSummary.killed.user.username}{" "}
             was killed
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function ActDaySummary({
+  act,
+  daySummary,
+}: {
+  act: GameAct;
+  daySummary: DaySummary;
+}) {
+  if (act === GameAct.DAY_SUMMARY) {
+    return (
+      <div className="flex-1 p-4 flex flex-col">
+        <p className="text-center">the village has spoken</p>
+
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="block mx-auto w-24">
+            <PlayerHead
+              disabled
+              onClick={null}
+              player={daySummary.killed}
+              showName={false}
+            />
+          </div>
+
+          <p className="text-center">
+            {daySummary.killed.user?.display_name ??
+              daySummary.killed.user.username}{" "}
+            was executed
           </p>
         </div>
       </div>
@@ -629,7 +676,7 @@ function ActVoting({
                       ?.isWerewolf
                   }
                   disabled={didVote}
-                  isVoted={votedPlayers.includes(id)}
+                  votes={votedPlayers.filter((player) => player === id)}
                   onClick={handleVote(id)}
                   player={player}
                 />
@@ -700,7 +747,7 @@ function Lobby({
 function PlayerHead({
   disabled,
   isMarked,
-  isVoted,
+  votes,
   isWerewolf,
   onClick,
   player,
@@ -708,7 +755,7 @@ function PlayerHead({
 }: {
   disabled?: boolean;
   isMarked?: boolean;
-  isVoted?: boolean;
+  votes?: string[];
   isWerewolf?: boolean;
   onClick: () => void;
   player: Player;
@@ -723,19 +770,23 @@ function PlayerHead({
       disabled={disabled || isDead}
     >
       <div className="relative w-full h-full aspect-w-1 aspect-h-1">
-        <img
-          alt=""
-          className={cn("mask-image-nes", {
-            "filter-grayscale-full": isDead || isMarked,
-          })}
-          loading="eager"
-          src={`https://cdn.soapbox.social/images/${player.user.image}`}
-        />
+        {!isDead && (
+          <Fragment>
+            <img
+              alt=""
+              className={cn("mask-image-nes", {
+                "filter-grayscale-full": isMarked,
+              })}
+              loading="eager"
+              src={`https://cdn.soapbox.social/images/${player.user.image}`}
+            />
 
-        <div
-          className="group-focus opacity-0 group-focus:opacity-100 absolute left-0 top-0 right-0 bottom-0 golden-border pointer-events-none"
-          aria-hidden
-        />
+            <div
+              className="group-focus opacity-0 group-focus:opacity-100 absolute left-0 top-0 right-0 bottom-0 golden-border pointer-events-none"
+              aria-hidden
+            />
+          </Fragment>
+        )}
 
         {isWerewolf && (
           <div className="absolute">
@@ -757,23 +808,21 @@ function PlayerHead({
           </div>
         )}
 
-        {isVoted && (
+        {votes.length >= 1 && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-xl text-center text-systemRed-dark">Voted</p>
+            <p className="text-xl text-center text-systemRed-dark">{`${votes.length} vote(s)`}</p>
           </div>
         )}
 
         {isDead && (
           <div className="absolute">
-            <div className="absolute bottom-0 right-1">
-              <img
-                alt=""
-                aria-hidden
-                className="w-8 h-8 image-rendering-pixelated"
-                loading="eager"
-                src="/werewolf/skull-icon.png"
-              />
-            </div>
+            <img
+              alt=""
+              aria-hidden
+              className="w-full h-full image-rendering-pixelated"
+              loading="eager"
+              src="/werewolf/skull-icon.png"
+            />
           </div>
         )}
       </div>
