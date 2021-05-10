@@ -40,7 +40,7 @@ const USERS = [
 ];
 
 export default function SoapboxApp({ Component, pageProps }: AppProps) {
-  if (typeof window !== "undefined") {
+  if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
     (window as any).webkit = {
       messageHandlers: {
         user: {
