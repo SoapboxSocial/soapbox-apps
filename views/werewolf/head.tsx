@@ -28,7 +28,17 @@ export function PlayerHead({
       disabled={disabled || isDead}
     >
       <div className="relative w-full h-full aspect-w-1 aspect-h-1">
-        {!isDead && (
+        {isDead ? (
+          <div className="absolute">
+            <img
+              alt=""
+              aria-hidden
+              className="w-full h-full image-rendering-pixelated"
+              loading="eager"
+              src="/werewolf/skull-icon.png"
+            />
+          </div>
+        ) : (
           <Fragment>
             <img
               alt=""
@@ -66,21 +76,9 @@ export function PlayerHead({
           </div>
         )}
 
-        {votes.length >= 1 && (
+        {votes?.length >= 1 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="text-xl text-center text-systemRed-dark">{`${votes.length} vote(s)`}</p>
-          </div>
-        )}
-
-        {isDead && (
-          <div className="absolute">
-            <img
-              alt=""
-              aria-hidden
-              className="w-full h-full image-rendering-pixelated"
-              loading="eager"
-              src="/werewolf/skull-icon.png"
-            />
           </div>
         )}
       </div>

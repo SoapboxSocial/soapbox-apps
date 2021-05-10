@@ -47,7 +47,6 @@ export type DaySummary = { killed: Player };
 export interface WerewolfListenEvents {
   TIME: (timeLeft: number) => void;
   PLAYERS: (players: Record<string, Player>) => void;
-  PLAYER: (player: Player) => void;
   ACT: (act: GameAct) => void;
   SCRY_RESULT: ({ id, isWerewolf }: ScryResult) => void;
   SUGGEST_KILL_RESULT: (id: string) => void;
@@ -55,6 +54,7 @@ export interface WerewolfListenEvents {
   SCRYED_PLAYER: (scryed: ScryResult) => void;
   VOTED_PLAYERS: (voted: string[]) => void;
   NIGHT_SUMMARY: (summary: NightSummary) => void;
+  WINNER: (winner: "VILLAGER" | "WEREWOLF") => void;
   DAY_SUMMARY: (summary: DaySummary) => void;
 }
 
@@ -66,4 +66,5 @@ export interface WerewolfEmitEvents {
   HEAL: (id: string) => void;
   SCRY: (id: string) => void;
   VOTE: (id: string) => void;
+  END_TURN: (role: GameAct) => void;
 }

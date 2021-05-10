@@ -236,3 +236,35 @@ export function Lobby({
 
   return null;
 }
+
+export function WinnerStage({ winner }: { winner: "VILLAGER" | "WEREWOLF" }) {
+  if (typeof winner === "string") {
+    let text: string;
+
+    switch (true) {
+      case winner === "VILLAGER":
+        text = "the villagers have killed all the werewolves";
+        break;
+      case winner === "WEREWOLF":
+        text = "the werewolves have killed everyone in the town";
+        break;
+    }
+
+    return (
+      <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <img
+          alt=""
+          aria-hidden
+          className="image-rendering-pixelated w-40 h-40"
+          draggable={false}
+          loading="eager"
+          src="/werewolf/trophy.png"
+        />
+
+        <p className="text-center">{text}</p>
+      </div>
+    );
+  }
+
+  return null;
+}

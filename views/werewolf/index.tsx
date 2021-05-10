@@ -1,5 +1,5 @@
 import { onClose } from "@soapboxsocial/minis.js";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession, useSoapboxRoomId, useSocket } from "../../hooks";
 import {
   ActDay,
@@ -8,6 +8,7 @@ import {
   ActNightSummary,
   Lobby,
   StartRound,
+  WinnerStage,
 } from "./presenters";
 import { ActDoctor, ActSeer, ActVoting, ActWerewolf } from "./roles";
 import {
@@ -43,18 +44,19 @@ export default function WerewolfView() {
     actSet(data);
   }, []);
 
-  const [player, playerSet] = useState<Player>();
-  const handlePlayer = useCallback((data: Player) => {
-    console.log("Received 'PLAYER' event", data);
+  const player = useMemo(() => {
+    if (!socket) {
+      return;
+    }
 
-    playerSet(data);
-  }, []);
+    return players[socket.id];
+  }, [players, socket]);
 
   const [scryedPlayers, scryedPlayersSet] = useState<ScryResult[]>([]);
   const handleScryedPlayers = useCallback((data: ScryResult) => {
     console.log("Received 'SCRYED_PLAYER' event", data);
 
-    scryedPlayersSet([...scryedPlayers, data]);
+    scryedPlayersSet((prev) => [...prev, data]);
   }, []);
 
   const [markedKills, markedKillsSet] = useState<string[]>([]);
@@ -85,6 +87,13 @@ export default function WerewolfView() {
     daySummarySet(data);
   }, []);
 
+  const [winner, winnerSet] = useState<"VILLAGER" | "WEREWOLF">();
+  const handleWinner = useCallback((data: "VILLAGER" | "WEREWOLF") => {
+    console.log("Received 'WINNER' event", data);
+
+    winnerSet(data);
+  }, []);
+
   /**
    * Setup Listeners
    */
@@ -97,23 +106,23 @@ export default function WerewolfView() {
     socket.emit("JOIN_GAME", user);
 
     socket.on("PLAYERS", handlePlayers);
-    socket.on("PLAYER", handlePlayer);
     socket.on("ACT", handleAct);
     socket.on("SCRYED_PLAYER", handleScryedPlayers);
     socket.on("MARKED_KILLS", handleMarkedKills);
     socket.on("VOTED_PLAYERS", handleVotedPlayers);
     socket.on("NIGHT_SUMMARY", handleNightSummary);
     socket.on("DAY_SUMMARY", handleDaySummary);
+    socket.on("WINNER", handleWinner);
 
     return () => {
       socket.off("PLAYERS", handlePlayers);
-      socket.off("PLAYER", handlePlayer);
       socket.off("ACT", handleAct);
       socket.off("SCRYED_PLAYER", handleScryedPlayers);
       socket.off("MARKED_KILLS", handleMarkedKills);
       socket.off("VOTED_PLAYERS", handleVotedPlayers);
       socket.off("NIGHT_SUMMARY", handleNightSummary);
       socket.off("DAY_SUMMARY", handleDaySummary);
+      socket.off("WINNER", handleWinner);
 
       socket.disconnect();
     };
@@ -171,6 +180,15 @@ export default function WerewolfView() {
     socket.emit("START_GAME");
   }, [socket]);
 
+  const emitEndTurn = useCallback(
+    (role: GameAct) => {
+      return () => {
+        socket.emit("END_TURN", role);
+      };
+    },
+    [socket]
+  );
+
   /**
    * Close Mini
    */
@@ -191,29 +209,31 @@ export default function WerewolfView() {
       <ActNight act={act} />
 
       <ActWerewolf
-        status={player?.status}
         act={act}
         emitMarkKillEvent={emitMarkKillEvent}
         markedKills={markedKills}
         players={players}
         role={player?.role}
+        status={player?.status}
       />
 
       <ActDoctor
-        status={player?.status}
         act={act}
         emitHealEvent={emitHealEvent}
+        endTurn={emitEndTurn(GameAct.DOCTOR)}
         players={players}
         role={player?.role}
+        status={player?.status}
       />
 
       <ActSeer
-        status={player?.status}
         act={act}
         emitScryEvent={emitScryEvent}
+        endTurn={emitEndTurn(GameAct.SEER)}
         players={players}
         role={player?.role}
         scryedPlayers={scryedPlayers}
+        status={player?.status}
       />
 
       <ActNightSummary act={act} nightSummary={nightSummary} />
@@ -223,15 +243,17 @@ export default function WerewolfView() {
       <ActDaySummary act={act} daySummary={daySummary} />
 
       <ActVoting
-        socket={socket}
-        status={player?.status}
         act={act}
         emitVoteEvent={emitVoteEvent}
         players={players}
         role={player?.role}
-        votedPlayers={votedPlayers}
         scryedPlayers={scryedPlayers}
+        socket={socket}
+        status={player?.status}
+        votedPlayers={votedPlayers}
       />
+
+      <WinnerStage winner={winner} />
     </main>
   );
 }
