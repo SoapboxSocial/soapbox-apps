@@ -150,10 +150,10 @@
   resolved "https://registry.yarnpkg.com/@opentelemetry/context-base/-/context-base-0.14.0.tgz#c67fc20a4d891447ca1a855d7d70fa79a3533001"
   integrity sha512-sDOAZcYwynHFTbLo6n8kIbLiVF3a3BLkrmehJUyEbT9F+Smbi47kLGS2gG2g0fjBLR/Lr1InPD7kXL7FaTqEkw==
 
-"@soapboxsocial/minis.js@^2.2.1":
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/@soapboxsocial/minis.js/-/minis.js-2.2.1.tgz#8f86aa1a89e4517d99ad951e25eec44067cde033"
-  integrity sha512-FLoPVXTU+02adpctBUgmdOpSVoL7gRxiOAF16zQdVLhCZSmlvfHfYPJGHtI2aC5gM8hs5NLJpu3FEQuxBCSx0A==
+"@soapboxsocial/minis.js@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@soapboxsocial/minis.js/-/minis.js-2.3.0.tgz#0c5f445c724b1f2823fe26741fec30267cbd8734"
+  integrity sha512-IjiDyoCZ5ffh8ZJA1pRxz67F9FsZWk8DpxeqP9jJ8J4eqjLcXiygO9gX4aT1UKtPOHOsyDwAn4B8jMnW/x+RvQ==
   dependencies:
     mitt "^2.1.0"
 
