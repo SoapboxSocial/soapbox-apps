@@ -1,5 +1,6 @@
 module.exports = {
-  purge: ["**/*.{js,jsx,ts,tsx}"],
+  purge: ["pages/**/*.tsx", "views/**/*.tsx", "components/**/*.tsx"],
+  mode: "jit",
   darkMode: "media",
   theme: {
     borderRadius: {
@@ -8,6 +9,11 @@ module.exports = {
       full: "9999px",
     },
     extend: {
+      fontFamily: {
+        "mini-pixel": ["Mini Pixel", "monospace"],
+        undefined: ["undefined", "monospace"],
+        "neue-pixel": ["Neue Pixel Grotesk", "Helvetica Neue", "sans-serif"],
+      },
       colors: {
         soapbox: "#8359fe",
         accent: {
@@ -32,7 +38,9 @@ module.exports = {
     },
   },
   variants: {
-    extend: {},
+    extend: {
+      opacity: ["group-focus"],
+    },
   },
-  plugins: [],
+  plugins: [require("@tailwindcss/aspect-ratio")],
 };
