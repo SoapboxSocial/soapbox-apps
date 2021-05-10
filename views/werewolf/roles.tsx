@@ -342,7 +342,8 @@ export function ActVoting({
                     (isCurrentPlayerSeer &&
                       scryedPlayers?.find((scryed) => scryed.id === id)
                         ?.isWerewolf) ||
-                    isCurrentPlayerWerewolf
+                    (isCurrentPlayerWerewolf &&
+                      player.role === PlayerRole.WEREWOLF)
                   }
                   disabled={isCurrentPlayerDead || didVote}
                   votes={votedPlayers.filter((player) => player === id)}
