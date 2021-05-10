@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
-import { PlayerHead } from "./head";
+import { PlayerHead } from "./player";
 import {
   GameAct,
   Player,

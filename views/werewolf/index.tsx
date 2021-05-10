@@ -253,7 +253,7 @@ export default function WerewolfView() {
         votedPlayers={votedPlayers}
       />
 
-      <WinnerStage winner={winner} />
+      <WinnerStage act={act} winner={winner} />
     </main>
   );
 }

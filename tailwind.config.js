@@ -11,6 +11,8 @@ module.exports = {
     extend: {
       fontFamily: {
         "mini-pixel": ["Mini Pixel", "monospace"],
+        undefined: ["undefined", "monospace"],
+        "neue-pixel": ["Neue Pixel Grotesk", "Helvetica Neue", "sans-serif"],
       },
       colors: {
         soapbox: "#8359fe",

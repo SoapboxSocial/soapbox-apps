@@ -24,6 +24,7 @@ export enum GameAct {
   VILLAGER = "VILLAGER",
   VOTING = "VOTING",
   WEREWOLF = "WEREWOLF",
+  GAME_OVER = "GAME_OVER",
 }
 
 export type Player = {

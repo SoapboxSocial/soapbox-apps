@@ -1,5 +1,5 @@
 import { useParams } from "../../hooks";
-import { PlayerHead } from "./head";
+import { PlayerHead } from "./player";
 import {
   DaySummary,
   GameAct,
@@ -237,8 +237,14 @@ export function Lobby({
   return null;
 }
 
-export function WinnerStage({ winner }: { winner: "VILLAGER" | "WEREWOLF" }) {
-  if (typeof winner === "string") {
+export function WinnerStage({
+  act,
+  winner,
+}: {
+  act: GameAct;
+  winner: "VILLAGER" | "WEREWOLF";
+}) {
+  if (act === GameAct.GAME_OVER) {
     let text: string;
 
     switch (true) {
@@ -252,6 +258,8 @@ export function WinnerStage({ winner }: { winner: "VILLAGER" | "WEREWOLF" }) {
 
     return (
       <div className="flex-1 p-4 flex flex-col items-center justify-center">
+        <p className="text-center">game over</p>
+
         <img
           alt=""
           aria-hidden
