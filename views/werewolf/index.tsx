@@ -160,7 +160,7 @@ export default function WerewolfView() {
         return;
       }
 
-      socket.emit("MARK_KILL", id);
+      socket.emit("MARK", id);
     },
     [socket]
   );

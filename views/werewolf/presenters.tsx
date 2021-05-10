@@ -249,7 +249,8 @@ export function WinnerStage({
 
     switch (true) {
       case winner === "VILLAGER":
-        text = "the villagers have killed all the werewolves";
+        text =
+          "the villagers have killed all the werewolves and saved the town";
         break;
       case winner === "WEREWOLF":
         text = "the werewolves have killed everyone in the town";
