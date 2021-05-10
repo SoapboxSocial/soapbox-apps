@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
 import { WerewolfEmitEvents, WerewolfListenEvents } from "./shared";
@@ -32,9 +31,8 @@ export function Timer({
 
   return (
     <div className="absolute top-0 right-0 left-0">
-      <motion.div
-        animate={{ width: `${(timer / ROUND_DURATION) * 100}%` }}
-        transition={{ ease: "linear" }}
+      <div
+        style={{ width: `${(timer / ROUND_DURATION) * 100}%` }}
         className="h-1 bg-soapbox"
       />
     </div>
