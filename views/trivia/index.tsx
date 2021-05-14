@@ -1,4 +1,4 @@
-import { onClose } from "@soapboxsocial/minis.js";
+import { onClose, User } from "@soapboxsocial/minis.js";
 import cn from "classnames";
 import DOMPurify from "dompurify";
 import { motion } from "framer-motion";
@@ -28,6 +28,7 @@ import type { DifficultyOptions, Question, Score, Vote } from "./types";
 interface TriviaEmitEvents {
   START_ROUND: (category: string, difficulty: DifficultyOptions) => void;
   CLOSE_GAME: () => void;
+  JOIN_GAME: (user: User) => void;
   VOTE: (vote: Vote) => void;
 }
 
@@ -35,7 +36,7 @@ interface TriviaListenEvents {
   VOTES: (votes: Vote[]) => void;
   QUESTION: (question: Question | null) => void;
   REVEAL: () => void;
-  SCORES: (scores: { display_name: string; score: number }[]) => void;
+  SCORES: (scores: Score[]) => void;
 }
 
 export function useSocket() {
@@ -157,6 +158,8 @@ export default function TriviaView() {
     if (!socket || !user) {
       return;
     }
+
+    socket.emit("JOIN_GAME", user);
 
     socket.on("QUESTION", handleQuestion);
     socket.on("REVEAL", handleReveal);

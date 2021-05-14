@@ -16,4 +16,8 @@ export type Vote = {
 
 export type DifficultyOptions = "any" | "easy" | "medium" | "hard";
 
-export type Score = { display_name: string; score: number };
+export type Score = {
+  id: string;
+  display_name: string;
+  score: number;
+};
