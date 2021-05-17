@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
 import { WerewolfEmitEvents, WerewolfListenEvents } from "./shared";
 
-const ROUND_DURATION = 60 * 3;
+const ROUND_DURATION = 60 * 1.5;
 
 export function Timer({
   socket,
